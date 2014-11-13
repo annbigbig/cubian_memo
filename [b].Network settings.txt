@@ -1,0 +1,70 @@
+b.設定網路參數
+
+把Cubian的Image檔刷進MicroSD卡之後，第一次開機會進入cubian-config設定介面
+在這裡可以設定預設使用者cubie的密碼、locale、timezone、keyboard layout
+選有ssh server的監聽埠號、主機名稱…好像還有別的我記不太記來了
+總之我一個一個點進去都設定了，接著會重開機，然後就會看到Cubian x1的登入畫面
+
+本來我是想直接用Cubian x1圖形介面的網路設定工具gnome-network-manager
+可是我發現我設定好無線網路之後，每一次我重新開機登入Cubian之後，我都要把無線網路先關掉再打開，
+才能取得連線，我想我還是直接修改/etc/network/interfaces好了
+老方法可是很管用
+
+首先產生無線網路psk
+# wpa_passphrase "YOUR_WIFI_ESSID_HERE" "YOUR_WIFI_PASSWORD_HERE" | grep psk=[a-f,0-9]
+
+終端機打印了
+psk=03c75e9db9307b63823d672ec889ea66a70316ff9f2bae610f715d4edd10cc3a
+
+然後打開vi文字編輯器，修改你的/etc/network/interfaces
+內容如下：
+
+# network is managed by gnome-network-manager
+# ---
+auto lo
+iface lo inet loopback
+
+# --- enable eth0 without ip address ---
+auto eth0
+iface eth0 inet manual
+
+# --- enable eth0 with dhcp ---
+#auto eth0
+#allow-hotplug eth0
+#  iface eth0 inet dhcp
+
+# --- enable eth0 with static ip ---
+#auto eth0
+#allow-hotplug eth0
+#iface eth0 inet static
+#  address 192.168.0.160
+#  netmask 255.255.255.0
+#  gateway 192.168.0.1
+#  dns-nameservers 8.8.8.8 8.8.4.4 168.95.1.1 168.95.192.1
+
+# --- enable wlan0 with dhcp
+#auto wlan0
+#allow-hotplug wlan0
+#iface wlan0 inet dhcp
+#  wpa-ssid YOUR_WIFI_SSID_HERE
+#  wpa-psk 03c75e9db9307b63823d672ec889ea66a70316ff9f2bae610f715d4edd10cc3a
+
+# --- enable wlan0 with static ip
+auto wlan0
+allow-hotplug wlan0
+iface wlan0 inet static
+  address 192.168.0.162
+  netmask 255.255.255.0
+  gateway 192.168.0.1
+  dns-nameservers 8.8.8.8 8.8.4.4 168.95.1.1 168.95.192.1
+  wpa-ssid YOUR_WIFI_SSID_HERE
+  wpa-psk 03c75e9db9307b63823d672ec889ea66a70316ff9f2bae610f715d4edd10cc3a
+
+
+改好存檔，離開vi文字編輯器
+值得注意的是，這裡的YOUR_WIFI_SSID_HERE請換成你家的無線網路SSID
+YOUR_WIFI_PASSWORD_HERE則是換成你家無線網路的密碼
+上面一併給出了 有線網卡eth0的配置方式
+如果需要用到eth0，就把前面注解的#給拿掉
+上面的組態檔還是有啟用eth0，只是沒有給它任何ipv4的地址配置
+至於無線網卡wlan0，是直接使用static ip指定一個靜態IP的方式

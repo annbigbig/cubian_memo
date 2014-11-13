@@ -1,0 +1,11 @@
+Cubian x1 使用筆記（cubieboard 3）
+
+a.下載Cubian x1影像檔，並刷到Micro-SD卡
+
+b.設定網路參數
+
+c.安裝git之後，去拉sunxi-tools的repo，然後編譯出fex2bin和bin2fex工具程式
+
+d.修改開機參數，關掉閃來閃去的LED燈，修改螢幕的解析度
+
+
