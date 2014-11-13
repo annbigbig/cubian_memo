@@ -1,0 +1,124 @@
+d.修改開機參數，關掉閃來閃去的LED燈，修改螢幕的解析度
+
+登入Cubian之後，一樣是從預設用戶cubie切換到root身分
+$ sudo -i
+
+看一下現在MicroSD卡的第一個分割區被掛載到什麼目錄？
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+rootfs           15G  2.1G   12G   15% /
+/dev/root        15G  2.1G   12G   15% /
+devtmpfs        887M     0  887M    0% /dev
+tmpfs           197M  564K  197M    1% /run
+tmpfs           5.0M  4.0K  5.0M    1% /run/lock
+tmpfs           394M     0  394M    0% /run/shm
+/dev/mmcblk0p1   44M   13M   29M   31% /boot
+tmpfs           983M   20K  983M    1% /tmp
+tmpfs           983M     0  983M    0% /var/tmp
+
+上面的訊息告訴我們，MicroSD卡的第一個分割區/dev/mmcblk0p1
+被掛載在/boot目錄
+切換到/boot目錄
+# cd /boot
+
+看一下目錄裡有什麼檔案？
+# ls -al
+
+終端機回應了
+總計 7977
+drwxr-xr-x  3 root root    1024 10月  3 19:46 .
+drwxr-xr-x 22 root root    4096 11月 12 18:18 ..
+-rw-r--r--  1 root root   90897  7月  3 06:39 config-3.4.79-sun7i
+drwx------  2 root root   12288 10月  3 19:47 lost+found
+-rw-r--r--  1 root root   50128 11月 12 18:18 script.bin
+-rw-r--r--  1 root root 2096043  7月  3 06:41 System.map-3.4.79-sun7i
+-rw-r--r--  1 root root     150 10月  3 19:46 uEnv.txt
+lrwxrwxrwx  1 root root      19 10月  3 19:46 uImage -> uImage-3.4.79-sun7i
+-rw-r--r--  1 root root 5912576  7月  3 06:41 uImage-3.4.79-sun7i
+
+上面可以看到script.bin還有uEnv.txt
+這兩個檔案我們待會要修改，所以先儲存一個備份起來，以免稍後改爛了還可以倒帶重來
+# cp ./script.bin ./script.bin.default
+# cp ./uEnv.txt ./uEnv.txt.default
+
+現在先來改script.bin
+這是二進制檔不能直接開vi文字編輯器來改，要先用稍早前sunxi-tools目錄裡編譯出的bin2fex工具程式
+把這個script.bin的內容倒出成純文字格式的xxx.fex檔
+# sunxi=/root/sunxi-tools
+# echo $sunxi
+# $sunxi/bin2fex ./script.bin ./xxx.fex
+
+終端機打印了
+fexc-bin: ./script.bin: version: 0.1.2
+fexc-bin: ./script.bin: size: 50128 (84 sections)
+
+看一下目錄裡有沒有產生我剛才從script.bin倒出的xxx.fex
+# ls -al|grep xxx
+
+終端機打印了
+-rw-r--r--  1 root root   27102 11月 13 23:58 xxx.fex
+
+打開vi文字編輯器來修改它
+# vi ./xxx.fex
+
+修改其中的
+screen0_output_type = 4
+screen0_output_mode = 10
+
+第一行的screen0_output_type = 4，指定VGA輸出
+第二行的screen0_output_mode = 10，指定解析度1920 X 1080更新頻率為60
+
+可以查閱
+http://linux-sunxi.org/Fex_Guide
+
+改好之後存檔，離開vi文字編輯器
+然後要把xxx.fex再倒回script.bin，執行
+# $sunxi/fex2bin xxx.fex script.bin
+# sync
+
+看一下
+# ls -al | grep bin
+
+終端機回應了
+-rw-r--r--  1 root root   50128 11月 14 00:09 script.bin
+-rw-r--r--  1 root root   50128 11月 13 23:53 script.bin.default
+
+可以發現script.bin的修改時間變成現在的，所以可以確認真的用新的設定值覆蓋掉舊的設定了
+不用修改uEnv.txt，直接重新開機
+（我也不知道為什麼不用改uEnv.txt，反正重新開機之後就是1920 X 1080了耶耶耶）
+# init 6
+
+就可以用1920 X 1080更新頻率60的VGA輸出到我的23吋LCD螢幕了
+還有我發現Cubian開機之後，我的cubietruck上面的LED並沒有顧人怨的亂閃
+所以我沒有去改xxx.fex裡面和led有關的設定
+如果要完全關掉led燈，先看看xxx.fex裡和led相關的設定是：
+# cat /boot/xxx.fex | grep led
+
+終端機打印了
+[leds_para]
+leds_used = 1
+leds_num = 2
+leds_pin_1 = port:PH20<1><default><default><0>
+leds_name_1 = "green:ph20:led1"
+leds_default_1 = 0
+leds_trigger_1 = "timer"
+leds_pin_2 = port:PH21<1><default><default><0>
+leds_name_2 = "blue:ph21:led2"
+leds_default_2 = 0
+leds_pin_3 = port:PH11<1><default><default><0>
+leds_name_3 = "white:ph11:led3"
+leds_default_3 = 0
+leds_pin_4 = port:PH07<1><default><default><0>
+leds_name_4 = "orange:ph07:led4"
+leds_default_4 = 0
+pmu_init_chg_enabled = 1
+
+我記得就是把
+led_used = 1
+改成
+led_used = 0
+然後再把改好的xxx.fex用上面的方法，倒成script.bin
+重新開機就可以了
+不過預設的Cubian x1開機之後，LED燈沒有閃得很顧人怨，我就不改了，只改螢幕解析度就好

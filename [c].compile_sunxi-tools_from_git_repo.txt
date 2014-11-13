@@ -1,0 +1,112 @@
+c.安裝git之後，去拉sunxi-tools的repo，然後編譯出fex2bin和bin2fex工具程式
+
+登入Cubian之後，切換到root身分
+# sudo -i
+
+在安裝套件之前，先更新一下套件庫
+# apt-get update
+
+待會兒要從sunxi-tools的repo裡編譯出fex2bin和bin2fex工具
+需要安裝這些套件
+# apt-get install libusb-1.0-0-dev pkg-config
+
+還有這個
+# apt-get install build-essential
+
+接著安裝git套件
+# apt-get install git
+
+終端機回答了
+正在讀取套件清單... 完成
+正在重建相依關係          
+正在讀取狀態資料... 完成
+git 已經是最新版本了。
+git 被設定為手動安裝。
+升級 0 個，新安裝 0 個，移除 0 個，有 39 個未被升級。
+
+居然已經安裝好了，真的嗎？看一下
+# which git
+
+終端機回應了
+/usr/bin/git
+
+看一下版本號
+# git --version
+
+終端機回應了
+git version 1.7.10.4
+
+看一下我現在人在那裡？
+# pwd
+
+終端機回應了
+/root
+
+這時候root用戶是第一次執行git指令，先設定好user.name和user.email
+# git config --global user.name "RooT"
+# git config --global user.email root@localhost
+
+看一下剛才那兩行指令產生了什麼？
+# cat .gitconfig
+
+終端機打印了
+[user]
+	email = root@localhost
+	name = RooT
+
+現在把sunxi-tools的代碼倉庫拉下來
+# git clone git://github.com/linux-sunxi/sunxi-tools/
+
+終端機回應了
+Cloning into 'sunxi-tools'...
+remote: Counting objects: 1078, done.
+remote: Total 1078 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (1078/1078), 369.41 KiB | 139 KiB/s, done.
+Resolving deltas: 100% (579/579), done.
+
+看一下現行目錄下有沒有剛下載來的sunxi-tools的repo？
+# ls -al|grep sunxi
+
+終端機回應了
+drwxr-xr-x  5 root root 4096 11月 13 23:18 sunxi-tools
+
+切換進sunxi-tools目錄
+# cd sunxi-tools
+
+系統裡應該有make指令吧？
+# which make
+
+終端機打印了
+/usr/bin/make
+
+有，很好，那我就我編我編我編編編
+# make
+
+終端機回應了
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/  -o fexc fexc.c script.c script_uboot.c script_bin.c script_fex.c 
+ln -s fexc bin2fex
+ln -s fexc fex2bin
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/  -o bootinfo bootinfo.c 
+bootinfo.c: In function ‘print_script’:
+bootinfo.c:274:25: warning: unused parameter ‘script’ [-Wunused-parameter]
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/ `pkg-config --cflags libusb-1.0`  -o fel fel.c  `pkg-config --libs libusb-1.0`
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/  -o pio pio.c 
+pio.c: In function ‘do_command’:
+pio.c:316:57: warning: unused parameter ‘argc’ [-Wunused-parameter]
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/ -c -o nand-part-main.o nand-part-main.c
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/ -c -o nand-part-a10.o nand-part.c -D A10
+gcc -g -O0 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -Iinclude/ -c -o nand-part-a20.o nand-part.c -D A20
+gcc  -o nand-part nand-part-main.o nand-part-a10.o nand-part-a20.o 
+root@cubie:~/sunxi-tools# 
+
+然後我看一下有沒有成功編譯出bin2fex和fex2bin工具程式？
+# ls -al|grep bin
+
+終端機回應了
+drwxr-xr-x 2 root root  4096 11月 13 23:18 bin
+lrwxrwxrwx 1 root root     4 11月 13 23:39 bin2fex -> fexc
+lrwxrwxrwx 1 root root     4 11月 13 23:39 fex2bin -> fexc
+-rw-r--r-- 1 root root  9554 11月 13 23:18 script_bin.c
+-rw-r--r-- 1 root root  1711 11月 13 23:18 script_bin.h
+
+有的，很好很好

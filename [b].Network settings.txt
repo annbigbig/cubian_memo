@@ -68,3 +68,8 @@ YOUR_WIFI_PASSWORD_HERE則是換成你家無線網路的密碼
 如果需要用到eth0，就把前面注解的#給拿掉
 上面的組態檔還是有啟用eth0，只是沒有給它任何ipv4的地址配置
 至於無線網卡wlan0，是直接使用static ip指定一個靜態IP的方式
+
+（附注：請修改/etc/hosts 內容如下）
+127.0.0.1 cubie
+
+除了登入用戶名稱是cubie之外，我的主機名稱也叫cubie
