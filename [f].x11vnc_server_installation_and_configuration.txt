@@ -1,0 +1,75 @@
+f.安裝x11vnc服務器，並設定好開機自動執行
+
+參考資料來源：
+http://terry.im/wiki/terry/Install%2Band%2BConfig%2BVNC%2BServer.html#InstallandConfigVNCServer-Ubuntu/Debian
+
+登入Cubian之後，切換到root用戶身份
+$ sudo -i
+
+在終端機執行以下指令安裝x11vnc套件
+# apt-get install x11vnc
+
+安裝完成之後，再切換回預設用戶cubie的身分
+# exit
+
+切換到家目錄
+$ cd ~
+
+看一下現在的位置
+$ pwd
+
+終端機打印了
+/home/cubie
+
+看一下有沒有什麼叫作vnc的目錄
+$ ls -al|grep vnc
+
+終端機輸出的是空白，沒有，/home/cubie目錄裡沒有任何名字裡有vnc三個字的子目錄
+現在來設定vnc密碼，執行
+$ x11vnc -storepasswd
+
+終端機打印了
+Enter VNC password: 
+Verify password:    
+Write password to /home/cubie/.vnc/passwd?  [y]/n y
+Password written to: /home/cubie/.vnc/passwd
+
+我在剛才設定好了用戶cubie的vnc密碼
+可以看一下
+$ ls -al|grep vnc
+
+終端機打印了
+drwxr-xr-x  2 cubie cubie   4096 11月 14 02:46 .vnc
+
+切換進這個.vnc子目錄，然後看看有什麼檔案？
+$ cd .vnc
+$ ls -al
+
+終端機打印了
+總計 12
+drwxr-xr-x  2 cubie cubie 4096 11月 14 02:46 .
+drwxr-xr-x 16 cubie cubie 4096 11月 14 02:46 ..
+-rw-------  1 cubie cubie    8 11月 14 02:46 passwd
+
+剛才設定的vnc密碼就存在這裡
+現在要啟動vnc server，一樣還是用戶cubie的身分，請執行
+$ x11vnc -safer -forever -display :0 -rfbauth /home/cubie/.vnc/passwd -rfbport 59000 -bg
+
+可以把上面這行指令，寫在/home/cubie/.bashrc的最後一行
+這樣每次用戶cubie登入的時候，自已會執行一次（成功執行x11vnc的前提是X server已經啟動，睡醒之後要把Cubian改成自動登入）
+
+這個時候隨便找一個有安裝vnc viewer的客戶端機器（例如我的筆記型電腦）就可以對Cubian使用vnc連線了
+可是我想讓x11vnc在開機的時候自動啟動成背景服務，所以我就
+# cd /etc/profile.d
+# touch ./x11vnc.autostart.sh
+# chmod 755 ./x11vnc.autostart.sh
+# echo "/usr/bin/x11vnc -safer -forever -display :0 -rfbauth /root/vncpasswd -rfbport 59000 -bg" >> ./x11vnc.autostart.sh
+# cp /home/cubie/.vnc/passwd /root/vncpasswd
+# chown root:root /root/vncpasswd
+# chmod 755 /root/vncpasswd
+
+
+
+
+
+
