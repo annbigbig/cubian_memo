@@ -1,0 +1,189 @@
+e.為預設用戶cubie產生ssh key pair，然後設定ssh server只能公鑰認證登入（禁用密碼登入）
+
+網路環境：
+ssh server（Cubian）：192.168.0.162
+ssh client（筆記型電腦）：192.168.0.12
+
+以用戶cubie身分登入Cubian
+首先產生ssh key pair
+切換到用戶cubie的家目錄下
+$ cd /home/cubie
+
+建立.ssh子目錄，並修改權限值為700
+$ mkdir .ssh
+$ chmod 700 .ssh
+
+產生ssh key pair
+$ ssh-keygen -t rsa -C "cubie@localhost"
+
+終端機回應了
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/cubie/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/cubie/.ssh/id_rsa.
+Your public key has been saved in /home/cubie/.ssh/id_rsa.pub.
+The key fingerprint is:
+3e:9d:83:41:62:3a:63:b4:2a:5f:c2:e0:fc:5f:39:fc cubie@localhost
+The key's randomart image is:
++--[ RSA 2048]----+
+|                 |
+|                 |
+|    . o .        |
+|   . + o         |
+|.   *   S        |
+|oo o o...+ .     |
+|.o+ .  =+ +      |
+| o.o  . o. .     |
+|  ....   E       |
++-----------------+
+
+看一下剛才的指令是不是真的產生了ssh key pair
+$ ls -al /home/cubie/.ssh/
+
+終端機打印了
+總計 16
+drwx------  2 cubie cubie 4096 11月 14 22:38 .
+drwxr-xr-x 18 cubie cubie 4096 11月 14 22:36 ..
+-rw-------  1 cubie cubie 1679 11月 14 22:38 id_rsa
+-rw-r--r--  1 cubie cubie  397 11月 14 22:38 id_rsa.pub
+
+產生一個空白的/home/cubie/.ssh/authorized_keys檔案，並設定權限為644
+$ touch /home/cubie/.ssh/authorized_keys
+$ chmod 644 /home/cubie/.ssh/authorized_keys
+
+把剛才產生的cubie的公鑰添加到authorized_keys的最後面
+$ cat /home/cubie/.ssh/id_rsa.pub >> /home/cubie/.ssh/authorized_keys
+
+Cubian預設的ssh server監聽的tcp埠號是36000
+如果不喜歡可以改/etc/ssh/sshd_config
+改這一行
+Port	36000
+改成你喜歡的數字（1024 - 65535之間的數字）
+
+ssh server（Cubian）這邊都完成了
+現在到工作機上（筆記型電腦）
+以用戶anntony身分登入後，執行
+$ ssh -p36000 cubie@192.168.0.162
+
+因為工作機這邊還沒有拿到ssh server上面的cubie用戶的私鑰
+所以終端機會要求你輸入服務器cubie用戶的密碼
+cubie@192.168.0.162's password:
+
+輸入完畢後，就可以登入ssh server（Cubian）
+Welcome to Cubian (GNU/Linux 3.4.79-sun7i armv7l)
+
+ * Documentation:  http://cubian.org
+
+ System information as of Fri Nov 14 22:18:35 CST 2014
+
+ Memory usage: 16.6% of 1.8GB
+ Usage of /:	16% of 15G
+
+ Until Fri Nov 14 21:31:09 CST 2014
+
+ 954 packages are installed.
+ 37 packages can be updated.
+ 11 updates are security updates.
+ kernel can be updated.
+
+Last login: Fri Nov 14 22:18:36 2014 from anntony-lenovo-b590.local
+cubie@cubie:~$ 
+
+現在先登出，執行
+$ exit
+回到工作機的終端機上，一樣是工作機的用戶anntony身分
+切換到家目錄下
+$ cd /home/anntony
+
+看一下我的.ssh子目錄
+$ ls -al | grep ssh
+
+終端機打印了
+drwx------   5 anntony anntony  4096 11月 10 01:02 .ssh
+
+進入.ssh子目錄
+$ cd .ssh
+
+看一下裡面裝了什麼？
+$ ls -al
+
+終端機打印了
+總計 72
+drwx------  5 anntony anntony 4096 11月 10 01:02 .
+drwxr-xr-x 53 anntony anntony 4096 11月 14 14:59 ..
+-rw-r--r--  1 anntony anntony  901 11月 10 01:02 config
+-rw-r--r--  1 anntony anntony  230  8月 22 14:42 config.bak
+-rw-r--r--  1 anntony anntony  222  9月 10 22:05 config.working
+-rw-r--r--  1 anntony anntony  343  9月 18 21:04 config.working.until0918
+drwxr-xr-x  2 anntony anntony 4096 11月  9 16:38 filezilla
+-rw-------  1 anntony anntony 1679  8月  5 16:44 id_rsa
+-rw-r--r--  1 anntony anntony  401  8月  5 16:44 id_rsa.pub
+-rw-------  1 anntony anntony 8864 11月 13 01:12 known_hosts
+-rw-------  1 anntony anntony 8198 10月  3 15:40 known_hosts.old
+drwxr-xr-x  2 anntony anntony 4096  8月  5 16:42 old-keys
+drwxr-xr-x  2 anntony anntony 4096 11月 10 01:00 others
+-rw-------  1 anntony anntony 1679  9月 10 21:37 private_key_from_cubie
+
+真的很亂，我的工作機上的/home/anntony/.ssh目錄裡
+裝了一堆private keys，有的是github用的，有的是banana pi那台主機用的
+有空再整理，有空一定會整理
+
+新增一個叫作cubian的子目錄
+$ mkdir cubian
+
+進入cubian子目錄
+$ cd cubian
+
+使用scp指令，把ssh server（Cubian）服務器上的用戶cubie的私鑰複製到工作機這邊的現行目錄下
+並更名為cubie@cubian.private.key
+$ scp -P 36000 cubie@192.168.0.162:/home/cubie/.ssh/id_rsa ./cubie@cubian.private.key
+
+終端機再一次要求輸入服務器用戶cubie的密碼
+cubie@192.168.0.162's password: 
+id_rsa                                                                                                              100% 1679     1.6KB/s   00:00 
+
+然後就下載到了ssh server上的用戶cubie的私鑰（也就是Cubian機器上/home/cubie/.ssh/id_rsa的這一把私鑰）
+接下來打開vi文字編輯器，修改/home/anntony/.ssh/config
+$ vi /home/anntony/.ssh/config
+
+在檔案最後面加入這個區塊
+Host cubian
+  HostName 192.168.0.162
+  User cubie
+  Port 36000
+  IdentityFile /home/anntony/.ssh/cubian/cubie@cubian.private.key
+
+然後存檔後離開vi文字編輯器
+現在，你可以在終端機直接用
+$ ssh cubian
+這個簡短的指令，連線到Cubian了
+
+如果沒有在
+/home/anntony/.ssh/config
+加入上面那五行設定
+你就要用
+$ ssh -p36000 -i /home/anntony/.ssh/cubian/cubie@cubian.private.key cubie@192.168.0.162
+這麼長這麼長有夠長的指令來連線
+
+最後，如果你真的要把ssh server的密碼登入的功能關掉
+那麼回到Cubian上面，以root用戶登入，然後修改 /etc/ssh/sshd_config
+# vi /etc/ssh/sshd_config
+
+把這一行
+#PasswordAuthentication yes
+
+改成這樣
+PasswordAuthentication no
+
+然後重新啟動ssh server
+# service ssh restart
+# service ssh status
+
+改完之後回到工作機，試著不使用私鑰來連線看看
+# ssh -p36000 cubie@192.168.0.162
+
+結果服務器會把你一腳踢出來
+Permission denied (publickey).
+
+耶，這就是我要的，只能用私鑰去連ssh server哦，啾咪
