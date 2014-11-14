@@ -55,21 +55,44 @@ drwxr-xr-x 16 cubie cubie 4096 11月 14 02:46 ..
 現在要啟動vnc server，一樣還是用戶cubie的身分，請執行
 $ x11vnc -safer -forever -display :0 -rfbauth /home/cubie/.vnc/passwd -rfbport 59000 -bg
 
-可以把上面這行指令，寫在/home/cubie/.bashrc的最後一行
-這樣每次用戶cubie登入的時候，自已會執行一次（成功執行x11vnc的前提是X server已經啟動，睡醒之後要把Cubian改成自動登入）
+如果要開log功能，就執行
+$ x11vnc -safer -forever -display :0 -rfbauth /home/cubie/.vnc/passwd -rfbport 59000 -bg > /tmp/x11vnc.log 2>&1 &
 
 這個時候隨便找一個有安裝vnc viewer的客戶端機器（例如我的筆記型電腦）就可以對Cubian使用vnc連線了
-可是我想讓x11vnc在開機的時候自動啟動成背景服務，所以我就
-# cd /etc/profile.d
-# touch ./x11vnc.autostart.sh
-# chmod 755 ./x11vnc.autostart.sh
-# echo "/usr/bin/x11vnc -safer -forever -display :0 -rfbauth /root/vncpasswd -rfbport 59000 -bg" >> ./x11vnc.autostart.sh
+使用IP_Address:port這樣的地址來連線（例如：192.168.0.162:59000）
+如果要讓Cubian在開機的時候於背景自動執行x11vnc，在x11vnc啟動之前，首先要讓X Server先啟動
+這裡為了方便，直接讓Cubian在開機之後，以預設用戶cubie登入X window，不再詢問用戶名稱和密碼
+請登入為root用戶，打開vi文字編輯器，修改/etc/slim.conf
+# vi /etc/slim.conf
+我只改了這兩行
+auto_login          yes
+default_user        cubie
+修改完就存檔離開vi文字編輯器
+
+剛才修改/etc/slim.conf的時候
+可以看到這個檔案裡有一段設定是這樣
+# This command is executed after a succesful login.
+# it runs in root
+login_success_cmd     exec /bin/bash /usr/lib/cubian/cubian-xinitrc-success %screen_width %screen_height 
+
+所以我可以大概知道，如果用戶登入圖形介面之後
+/usr/lib/cubian/cubian-xinitrc-success
+這個檔案會被執行一次
+
+所以再修改/usr/lib/cubian/cubian-xinitrc-success
+在最後面加上這兩行
+# x11vnc service autostart
+x11vnc -safer -forever -display :0 -rfbauth /root/vncpasswd -rfbport 59000 -bg > /tmp/x11vnc.log 2>&1 &
+
+複製剛才產生的vnc密碼檔，到root的家目錄下
 # cp /home/cubie/.vnc/passwd /root/vncpasswd
 # chown root:root /root/vncpasswd
-# chmod 755 /root/vncpasswd
+# chmod 600 /root/vncpasswd
 
-
-
-
-
+接下來把cubietruck重新開機，這一次一開機，就會以用戶cubie的身分自動登入圖形介面了
+這是因為我們剛才在/etc/slim.conf修改的設定生效了
+然後登入圖形介面之後，又會再自動執行一次
+/usr/lib/cubian/cubian-xinitrc-success
+這個檔案裡的最後兩行是我們剛才加上去的
+接著x11vnc也在自動登入圖形介面之後，自動於埠號59000啟動了
 
