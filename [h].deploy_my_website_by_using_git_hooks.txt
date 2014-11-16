@@ -18,6 +18,8 @@ h.新增一個用戶gituser01，他在家目錄下持有一個bare repo，他可
 9.設定/home/anntony/.ssh/config
 10.測試以稍早前下載的用戶gituser01的私鑰，是否可以ssh連線登入Cubian服務器？
 11.在工作機端測試git clone是否可以拉下bare repo？還有git push之後bare repo及網站根目錄是否更新？
+
+額外的安全設定：
 12.將服務器用戶gituser01的登入shell改成/usr/bin/git-shell
 13.重複步驟10看看是否還能ssh登入Cubian服務器取得shell，重複步驟11看看git clone與git push是否仍正常？
 
@@ -435,4 +437,124 @@ $ git commit -m "some messages related to this update"
 $ git push origin master
 一直這樣無限輪迴…好吧這樣說好像有點慘悲
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+12.將服務器用戶gituser01的登入shell改成/usr/bin/git-shell
+
+這麼作是為了讓服務器用戶gituser01只能使用git clone和git push指令
+來操作他在服務器上的bare repo（路徑：/home/gituser01/site.git）
+不允許他使用ssh登入服務器取得bash shell
+
+參考資料：
+http://stackoverflow.com/questions/16683272/limit-ssh-user-to-a-shell-command
+
+在服務器（Cubian）上面以root身分，執行
+# usermod -s /usr/bin/git-shell gituser01
+
+或是打開vi文字編輯器，修改/etc/passwd
+# vi /etc/passwd
+
+把這行
+gituser01:x:1001:1002:,,,:/home/gituser01:/bin/bash
+
+改成這樣
+gituser01:x:1001:1002:,,,:/home/gituser01:/usr/bin/git-shell
+
+然後存檔，離開vi文字編輯器
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+13.重複步驟10看看是否還能ssh登入Cubian服務器取得shell，重複步驟11看看git clone與git push是否仍正常？
+
+回到工作機上，以用戶anntony的身分，執行
+$ ssh cubian001
+
+或是
+$ ssh -p36000 -i /home/anntony/.ssh/cubian001/gituser01@cubian.private.key gituser01@192.168.0.162
+
+你都會得到
+Welcome to Cubian (GNU/Linux 3.4.79-sun7i armv7l)
+
+ * Documentation:  http://cubian.org
+
+ System information as of Sun Nov 16 22:57:08 CST 2014
+
+ Memory usage: 16.9% of 1.8GB
+ Usage of /:	16% of 15G
+
+ Until Sun Nov 16 15:22:02 CST 2014
+
+ 975 packages are installed.
+ 37 packages can be updated.
+ 11 updates are security updates.
+ kernel can be updated.
+
+Last login: Sun Nov 16 16:16:50 2014 from anntony-lenovo-b590.local
+fatal: Interactive git shell is not enabled.
+hint: ~/git-shell-commands should exist and have read and execute access.
+Connection to 192.168.0.162 closed.
+anntony@anntony-Lenovo-B590 ~ $
+
+然後被Cubian服務器踢回工作機的終端機提示符
+原因寫在上面的訊息裡了哦，就是
+hint: ~/git-shell-commands should exist and have read and execute access.
+
+接著再實驗一下，我們關心的git clone還有git push指令可不可以使用？
+在工作機上，一樣是用戶anntony的身分
+切換到/tmp目錄下
+$ cd /tmp
+
+試試看能不能把Cubian服務器上的用戶gituser01家目錄下的site.git裸倉庫拉下來？
+$ git clone cubian001:/home/gituser01/site.git ./working-repo
+
+終端機回應了
+Cloning into './working-repo'...
+remote: Counting objects: 3, done.
+remote: Total 3 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (3/3), done.
+Checking connectivity... done.
+
+真的拉下來了嗎？ls -al瞧一瞧
+$ ls -al | grep working
+
+終端機打印了
+drwxr-xr-x  3 anntony anntony 4096 11月 16 23:09 working-repo
+
+哦哦，即使服務器的用戶gituser01他的shell換成了/usr/bin/git-shell，
+工作機這邊雖然不能再用ssh登入，不過git clone還是可以拉下來，那麼看看git push能不能推回去？
+$ cd working-repo
+$ echo "pica pica chu" >> ./index.html
+$ git add -A
+$ git commit -m "pi ca chu"
+$ git push origin master
+
+終端機打印了
+Counting objects: 5, done.
+Writing objects: 100% (3/3), 284 bytes | 0 bytes/s, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To cubian001:/home/gituser01/site.git
+   a6a67ad..fa01a61  master -> master
+
+回到Cubian服務器上，切換到root身分
+$ sudo -i
+
+再切換到用戶gituser01的裸倉庫目錄
+# cd /home/gituser01/site.git
+
+打印一下裸倉庫的分支和提交狀態
+# git log --oneline --graph --decorate --all
+
+終端機打印了
+* fa01a61 (HEAD, master) pi ca chu
+* a6a67ad Initial commit
+
+剛才我們產生的叫作pi ca chu的commit確實推到Cubian服務器那邊了
+順便看一下剛才的修改有沒有一併更新/home/gituser01/website目錄下的檔案？
+# cd /home/gituser01/website/
+# cat ./index.html
+
+終端機打印了
+welcome to gituser01's website
+pica pica chu
+
+是的，這是剛才我們修改的網頁內容
+服務器上的用戶gituser01，可以使用git clone或是git push，但是不能ssh登入服務器
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
