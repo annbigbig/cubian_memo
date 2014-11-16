@@ -1,0 +1,438 @@
+h.新增一個用戶gituser01，他在家目錄下持有一個bare repo，他可以從異地使用git push提交工作成果過來，並同時部署到他的網站根目錄
+
+網路環境
+服務器（Cubian）：192.168.0.162
+工作機（筆記型電腦）：192.168.0.12
+
+服務器（Cubian）的設定：
+1.新增用戶gituser01
+2.把用戶www-data加入gituser01群組
+3.產生ssh key pair及authorized_keys
+4.在用戶gituser01的家目錄下產生一個bare repo
+5.設定剛才產生的bare repo裡的hooks/post-receive
+6.產生用戶gituser01的網站根目錄
+7.打開SSH Server密碼登入的功能，並重新啟動SSH server
+
+工作機的設定：
+8.下載剛才服務器（Cubian）產生的用戶gituser01的私鑰
+9.設定/home/anntony/.ssh/config
+10.測試以稍早前下載的用戶gituser01的私鑰，是否可以ssh連線登入Cubian服務器？
+11.在工作機端測試git clone是否可以拉下bare repo？還有git push之後bare repo及網站根目錄是否更新？
+12.將服務器用戶gituser01的登入shell改成/usr/bin/git-shell
+13.重複步驟10看看是否還能ssh登入Cubian服務器取得shell，重複步驟11看看git clone與git push是否仍正常？
+
+細節
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.新增用戶gituser01
+登入Cubian之後，切換為root身分
+$ sudo -i
+
+新增用戶gituser01
+# adduser gituser01
+
+和終端機交談一下，設定用戶密碼
+Adding user `gituser01' ...
+Adding new group `gituser01' (1002) ...
+Adding new user `gituser01' (1001) with group `gituser01' ...
+Creating home directory `/home/gituser01' ...
+Copying files from `/etc/skel' ...
+輸入新的 UNIX 密碼：
+再次輸入新的 UNIX 密碼：
+passwd：密碼已成功地變更
+正在改變 gituser01 的使用者訊息
+請輸入新值，或直接按 ENTER 鍵以使用預設值
+	全名 []: 
+	房間號碼 []: 
+	工作電話 []: 
+	住家電話 []: 
+	其它 []: 
+Is the information correct? [Y/n] y
+
+確認一下是否真的新增了gituser01用戶？
+# cat /etc/passwd | grep gituser01
+
+終端機回應了
+gituser01:x:1001:1002:,,,:/home/gituser01:/bin/bash
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.把用戶www-data加入gituser01群組
+
+這個步驟是為了讓用戶www-data可以存取用戶gituser01的網站根目錄
+因為nginx的worker processes是以用戶www-data的身分執行的
+先看看用戶www-data加入了什麼群組？
+# id www-data
+
+終端機打印了
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+把用戶www-data加到用戶gituser01的群組裡
+# usermod -a -G gituser01 www-data
+
+再看看用戶www-data現在加入了什麼群組？
+# id www-data
+
+終端機打印了
+uid=33(www-data) gid=33(www-data) groups=33(www-data),1002(gituser01)
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.產生ssh key pair及authorized_keys
+
+從root身分再切換到gituser01身分
+# sudo su - gituser01
+
+看一下我現在人在那個目錄裡？
+$ pwd
+
+終端機打印了
+/home/gituser01
+
+新增一個.ssh的子目錄並修改權限值為700
+$ mkdir .ssh
+$ chmod 700 .ssh
+
+看一下剛才產生的.ssh目錄
+$ ls -al | grep ssh
+
+終端機打印了
+drwx------ 2 gituser01 gituser01 4096 11月 16 15:04 .ssh
+
+切換進.ssh子目錄
+$ cd .ssh
+
+產生ssh key pair
+$ ssh-keygen -t rsa -C "gituser01@localhost"
+
+和終端機交談一下，我連按了三次Enter，都接受預設值就可以了
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/gituser01/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/gituser01/.ssh/id_rsa.
+Your public key has been saved in /home/gituser01/.ssh/id_rsa.pub.
+The key fingerprint is:
+02:87:06:6f:b9:46:e1:33:17:e7:32:eb:a7:70:36:18 gituser01@localhost
+The key's randomart image is:
++--[ RSA 2048]----+
+|  . . . .        |
+|   + + +         |
+|    % = .        |
+|   + B +         |
+|    E o S        |
+|   . + .         |
+|    o = .        |
+|     + +         |
+|      .          |
++-----------------+
+
+看一下剛產生的ssh key pair
+$ ls -al
+
+終端機打印了
+總計 16
+drwx------ 2 gituser01 gituser01 4096 11月 16 15:06 .
+drwxr-xr-x 4 gituser01 gituser01 4096 11月 16 15:04 ..
+-rw------- 1 gituser01 gituser01 1675 11月 16 15:06 id_rsa
+-rw-r--r-- 1 gituser01 gituser01  401 11月 16 15:06 id_rsa.pub
+
+產生一個authorized_keys空白檔案
+$ touch /home/gituser01/.ssh/authorized_keys
+
+把剛才產生的公鑰的內容，添加到authorized_keys的最後面
+$ cat /home/gituser01/.ssh/id_rsa.pub >> /home/gituser01/.ssh/authorized_keys
+
+因為authorized_keys裡面只有記錄一把公鑰，所以它的內容會剛好和id_rsa.pub一模一樣
+打印authorized_keys的內容出來看看
+$ cat /home/gituser01/.ssh/authorized_keys
+
+會像這個樣子
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIcwNZdTtXoETh41WNj1BDMlHO1JVmCGCbOJ9X+sNQKDNCRJZET4xC6uWPVYt1MdaF2C2czDweOa08V2QYWEwAEa7JxpSn9hMimsk09uRq+D4J7KHMmD4Giq8/lrvaJhfay4xK/+RkNOhmtvj+VJXRfchYZAYZ2eI14Xk11qK2VEom+m6QKLeZACmoE9TNc7/Qi8v1NcykNaelhCOWv4UVECCgTYCYY3LXcUF3ep+EB5xRXG3RJNxLdNfaUaeSZWP1oUN5DR4wTv24T8FbqhzcUpbX/N10lTEovcbeO8Jg4H3AVojif2vzyKiL6blxGiY416qLkBfd4E5KpkACYeDB gituser01@localhost
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.在用戶gituser01的家目錄下產生一個bare repo
+
+一樣是在Cubian機器上，以用戶gituser01的身分
+切換到自已的家目錄下
+$ cd /home/gituser01
+
+由於用戶gituser01是第一次執行git指令
+先為他設定user.name和user.email
+$ git config --global user.name "gituser01"
+$ git config --global user.email gituser01@localhost
+
+剛才設定好的user.name和user.email會存在/home/gituser01/.gitconfig
+打印來看看
+$ cat /home/gituser01/.gitconfig
+
+終端機打印了
+[user]
+	name = gituser01
+	email = gituser01@localhost
+
+新增一個bare repo
+$ git init --bare site.git
+
+看一下剛才產生的site.git
+$ ls -al | grep site
+
+終端機打印了
+drwxr-xr-x 7 gituser01 gituser01 4096 11月 16 15:26 site.git
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+5.設定剛才產生的bare repo裡的hooks/post-receive
+
+接著上個步驟，切換到剛產生的site.git目錄
+$ cd /home/gituser01/site.git
+
+切換到hooks子目錄
+$ cd hooks
+
+新增一個空白檔案post-receive
+並設定權限為755，擁有人和群組都是gituser01
+$ touch post-receive
+$ chown gituser01:gituser01 post-receive
+$ chmod 755 post-receive
+
+看一下剛才產生的post-receive權限值
+$ ls -al | grep post-receive
+
+終端機打印了
+-rwxr-xr-x 1 gituser01 gituser01    0 11月 16 15:40 post-receive
+
+打開vi文字編輯器，為剛才的post-receive產生內容
+它的內容是：
+#!/bin/sh
+git --work-tree=/home/gituser01/website --git-dir=/home/gituser01/site.git checkout -f
+
+改好就存檔，離開vi文字編輯器
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+6.產生用戶gituser01的網站根目錄
+
+緊接著上個步驟，一樣是在Cubian機器上，以gituser01身分
+切換到用戶gituser01的家目錄下
+$ cd /home/gituser01
+
+新增用戶gituser01的網站根目錄，並變更權限值為775
+$ mkdir website
+$ chmod 775 website
+
+看一下剛才產生的website目錄權限
+$ ls -al | grep website
+
+終端機打印了
+drwxrwxr-x 2 gituser01 gituser01 4096 11月 16 15:46 website
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+7.打開SSH Server密碼登入的功能，並重新啟動SSH server
+
+因為待會兒ssh client端要執行scp指令來複製服務器（Cubian）這邊的用戶gituser01的私鑰
+所以要確定SSH Server有打開密碼登入的功能
+先登入成root身分，然後打開vi文字編輯器，修改/etc/ssh/sshd_config
+# vi /etc/ssh/sshd_config
+
+確認有這一行設定值
+PasswordAuthentication yes
+
+改好就存檔，然後離開vi文字編輯器
+接著重新啟動SSH Server讓剛才的設定值生效
+# service ssh restart
+
+看一下是否真的成功重新啟動了？
+# service ssh status
+
+終端機打印了
+[ ok ] sshd is running.
+
+或是可以執行
+# netstat -anp | grep ssh
+
+終端機打印了
+tcp        0      0 0.0.0.0:36000           0.0.0.0:*               LISTEN      24275/sshd      
+tcp        0      0 192.168.0.162:36000     192.168.0.12:40291      ESTABLISHED 9411/sshd: cubie [p
+tcp6       0      0 :::36000                :::*                    LISTEN      24275/sshd      
+unix  2      [ ACC ]     STREAM     LISTENING     9718     8828/gnome-keyring- /home/cubie/.cache/keyring-6mBV3b/ssh
+unix  2      [ ACC ]     STREAM     LISTENING     9676     8812/ssh-agent      /tmp/ssh-pwZ71lzT5a23/agent.8780
+unix  3      [ ]         STREAM     CONNECTED     10947    9411/sshd: cubie [p 
+unix  2      [ ]         DGRAM                    10935    9411/sshd: cubie [p 
+
+上面的訊息告訴我們，sshd正在監聽tcp port 36000
+這樣就是成功的重新啟動sshd了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+8.下載剛才服務器（Cubian）產生的用戶gituser01的私鑰
+
+回到工作機（筆記型電腦）上面，我常用的登入用戶名是anntony
+以用戶anntony登入工作機，然後切換到家目錄下
+$ cd /home/anntony
+
+再進入.ssh子目錄
+$ cd .ssh
+
+新增一個叫作cubian001的子目錄
+$ mkdir cubian001
+
+切換進cubian001子目錄
+$ cd cubian001
+
+頭好暈，所以我現在人到底在那裡？
+$ pwd
+
+終端機打印了
+/home/anntony/.ssh/cubian001
+
+現在要下載剛才服務器那邊的用戶gituser01的私鑰，並更名為gituser01@cubian.private.key
+$ scp -P 36000 gituser01@192.168.0.162:/home/gituser01/.ssh/id_rsa ./gituser01@cubian.private.key
+
+上面的指令也可以換成這一行，一樣的效果
+$ sftp -P 36000 gituser01@192.168.0.162:/home/gituser01/.ssh/id_rsa ./gituser01@cubian.private.key
+
+終端機會要求你輸入服務器用戶gituser01的密碼
+gituser01@192.168.0.162's password: 
+id_rsa                                                                                                                        100% 1675     1.6KB/s   00:00  
+
+看一下私鑰是不是真的下載成功了？
+$ ls -al
+
+終端機打印了
+總計 12
+drwxr-xr-x 2 anntony anntony 4096 11月 16 16:01 .
+drwx------ 7 anntony anntony 4096 11月 16 15:59 ..
+-rw------- 1 anntony anntony 1675 11月 16 16:01 gituser01@cubian.private.key
+
+很好，真的下載成功了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+9.設定/home/anntony/.ssh/config
+
+打開vi文字編輯器，修改/home/anntony/.ssh/config
+$ vi /home/anntony/.ssh/config
+
+在最後面加上這個區塊
+Host cubian001
+  HostName 192.168.0.162
+  User gituser01
+  Port 36000
+  IdentityFile /home/anntony/.ssh/cubian001/gituser01@cubian.private.key
+
+改好就存檔，然後離開vi文字編輯器
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+10.測試以稍早前下載的用戶gituser01的私鑰，是否可以ssh連線登入Cubian服務器？
+
+在工作機上，以用戶anntony的身分執行
+$ ssh cubian001
+
+如果成功登入Cubian的話，會得到這樣的終端機輸出
+Welcome to Cubian (GNU/Linux 3.4.79-sun7i armv7l)
+
+ * Documentation:  http://cubian.org
+
+ System information as of Sun Nov 16 16:06:06 CST 2014
+
+ Memory usage: 23.0% of 1.8GB
+ Usage of /:	16% of 15G
+
+ Until Sun Nov 16 15:22:02 CST 2014
+
+ 975 packages are installed.
+ 37 packages can be updated.
+ 11 updates are security updates.
+ kernel can be updated.
+
+gituser01@cubie:~$ 
+
+上面的gituser01@cubie:~$的提示符告訴我們，現在登入的用戶名稱是gituser01
+
+如果剛才前一個步驟沒有在工作機上的/home/anntony/.ssh/config
+作設定，那麼就要用
+$ ssh -p36000 -i /home/anntony/.ssh/cubian001/gituser01@cubian.private.key gituser01@192.168.0.162
+這樣的指令來連線
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+11.在工作機端測試git clone是否可以拉下bare repo？還有git push之後bare repo及網站根目錄是否更新？
+
+還是在工作機上，一樣是用戶anntony的身分
+切換到家目錄下
+$ cd /home/anntony
+
+把Cubian服務器上的site.git這個裸倉庫拉下來，然後更名為working-repo
+$ git clone cubian001:/home/gituser01/site.git ./working-repo
+
+上面的指令也可以這樣下，效果是一樣的
+$ git clone cubian001:site.git ./working-repo
+
+終端機會微靠腰說你在複製一個空的倉庫，沒有關係的
+Cloning into './working-repo'...
+warning: You appear to have cloned an empty repository.
+Checking connectivity... done.
+
+看一下我剛拉下的已經更名過的working-repo
+$ ls -al | grep working-repo
+
+終端機打印了
+drwxr-xr-x   3 anntony anntony  4096 11月 16 16:21 working-repo
+
+切換進working-repo目錄
+$ cd working-repo
+
+看一下倉庫裡寫的origin遠端倉庫的地址是？
+$ git remote -v
+
+終端機打印了
+origin	cubian001:/home/gituser01/site.git (fetch)
+origin	cubian001:/home/gituser01/site.git (push)
+
+現在產生一個index.html，然後暫存，提交，
+再推回原來服務器上的裸倉庫（/home/gituser01/site.git）
+$ echo "welcome to gituser01's website" >> index.html
+$ git add -A
+$ git commit -m "Initial commit"
+$ git push origin master
+
+如果git push成功，那麼終端機會這樣回應
+Counting objects: 3, done.
+Writing objects: 100% (3/3), 246 bytes | 0 bytes/s, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To cubian001:/home/gituser01/site.git
+ * [new branch]      master -> master
+
+回到Cubian服務器上，以gituser01身分，切換到/home/gituser01/site.git也就是裸倉庫的目錄
+$ sudo -i
+$ sudo su - gituser01
+$ cd /home/gituser01/site.git
+
+查看一下目前裸倉庫裡的分支和提交圖
+$ git log --oneline --graph --decorate --all
+
+終端機打印了
+* a6a67ad (HEAD, master) Initial commit
+
+哦哦這就是剛才我在工作機上面git push過去的提交，
+那麼現在再去/home/gituser01/website也就是網站根目錄確認一下
+$ cd /home/gituser01/website
+$ ls -al
+
+終端機打印了
+總計 12
+drwxrwxr-x 2 gituser01 gituser01 4096 11月 16 16:41 .
+drwxr-xr-x 6 gituser01 gituser01 4096 11月 16 16:38 ..
+-rw-r--r-- 1 gituser01 gituser01   31 11月 16 16:41 index.html
+
+看看index.html的內容是？
+$ cat ./index.html
+
+終端機打印了
+welcome to gituser01's website
+
+這就是剛才在工作機上的/home/anntony/working-repo目錄裡產生的index.html
+以後工作機上的這個/home/anntony/working-repo
+就是你的工作目錄
+你就是每天在這個工作目錄裡
+產生網站代碼
+然後
+$ git add -A
+$ git commit -m "some messages related to this update"
+$ git push origin master
+一直這樣無限輪迴…好吧這樣說好像有點慘悲
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊

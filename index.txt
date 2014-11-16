@@ -12,4 +12,14 @@ e.為預設用戶cubie產生ssh key pair，然後設定ssh server只能公鑰認
 
 f.安裝x11vnc服務器，並設定好開機自動執行
 
+g.安裝中文輸入法gcin
+
+h.新增一個用戶gituser01，他在家目錄下持有一個bare repo，他可以從異地使用git push提交工作成果過來，並同時部署到他的網站根目錄
+
+i.新增一個用戶sftpuser01，他在家目錄下持有一個website子目錄，他可以從異地sftp連線過來，將新的代碼上傳到他的網站根目錄
+
+j.將目前這張MicroSD卡作成一個影像檔
+
+k.接上我的750 GB SATA2硬碟，並使用/dev/sda1當成Cubian系統的rootfs，而/dev/sda2要自動掛載成/home
+
 

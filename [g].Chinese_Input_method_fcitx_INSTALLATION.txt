@@ -1,0 +1,54 @@
+g.安裝中文輸入法gcin
+
+參考資料：
+http://blog.geeky.name/post/ubuntu-14.04-boshiamy-gcin
+http://levichen.logdown.com/posts/2014/01/08/no-shrimp-on-ubuntu-install-131
+http://quri01.blogspot.tw/2011/12/for-gicn-on-ubuntu.html
+
+試著安裝gcin看看
+# apt-get install gcin im-switch
+# im-switch -s gcin
+# cd /tmp
+# wget ftp://ftp.tw.freebsd.org/pub/branches/-current/ports/distfiles/noseeing-12.tar.gz
+# tar zxvf ./noseeing-12.tar.gz
+# cp ./noseeing.gtab /usr/share/gcin/table/
+# sync
+# init 6
+
+結果重新開機之後，一試就成，使用也很正常
+使用Ctrl+Alt+9可以切換到嘸蝦米
+而Ctrl+space可以中英互相切換
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+（在Cubian上安裝fcitx的過程，安裝成功，但是不能用，所以不用再看下去，純粹記錄爽的）
+
+參考資料：
+http://cwwang2.blogspot.tw/2013/10/ubuntu-linux-1304-fcitx.html
+http://www.ubuntu-tw.org/modules/newbb/viewtopic.php?post_id=246870
+
+登入Cubian之後，切換到root身分，在終端機下執行
+# apt-get install fcitx
+# apt-get install fcitx-m17n
+# apt-get install fcitx-table
+# apt-get install fcitx-chewing
+# apt-get install fcitx-table-boshiamy
+# apt-get install fcitx-table-cangjie
+
+設定輸入法之前，一定一定要切換回一般用戶cubie的身分
+# exit
+
+在終端機下執行
+$ im-config
+
+重新開機之後，結果一切換中文輸入法（Ctrl+space），打開記事本才打第一個字，fcitx就掛了
+用
+# ps aux | grep fcitx
+root      8264  0.0  0.0   4028   760 pts/0    S+   03:07   0:00 grep fcitx
+cubie    11790  0.0  0.0      0     0 ?        Z    01:25   0:00 [fcitx] <defunct>
+
+可以發現到fcitx變成了僵屍（zombie）
+我不管怎麼
+# kill 11790
+# kill -9 11790
+它都是一樣在那裡，不去投胎
+只好全部移除，然後改裝gcin
