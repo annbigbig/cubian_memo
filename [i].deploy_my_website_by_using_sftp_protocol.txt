@@ -630,8 +630,77 @@ website
 稍後要把id_rsa這個檔案，也就是服務器用戶sftpuser01的私鑰下載到工作機上
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+16.下載服務器用戶sftpuser01的私鑰，並轉換成FileZilla專用的ppk格式
 
+接著上個步驟，我們已經打開FileZilla，
+而且已經使用服務器用戶sftpuser01的帳號和密碼登入的狀態
+請直接把「遠端站台： / 」根目錄下的id_rsa
+下載到本地端（工作機）的/tmp目錄
+然後在工作機上，以用戶anntony的身分，執行
+$ cd /home/anntony/.ssh/cubian
+$ cp /tmp/id_rsa ./sftpuser01@cubian.private.key
 
+然後看一下
+$ ls -al
 
+終端機打印了
+總計 16
+drwxr-xr-x 2 anntony anntony 4096 11月 18 00:21 .
+drwx------ 7 anntony anntony 4096 11月 16 16:12 ..
+-rw------- 1 anntony anntony 1679 11月 14 23:10 cubie@cubian.private.key
+-rw-r--r-- 1 anntony anntony 1679 11月 18 00:21 sftpuser01@cubian.private.key
+
+現在回到FileZilla，打開上方選單列的「編輯（E） > 設定（S）」
+接著彈出來一個「設定」對話框，在左方的「連線」「SFTP」可以再看到右方的「加入金鑰檔案（A）…」
+按下去之後，在「選擇包含私鑰的檔案」對話框，選擇左邊中間的「檔案系統」
+在「位置（L）：」這裡直接輸入剛才存放私鑰的路徑 /home/anntony/.ssh/cubian/sftpuser01@cubian.private.key
+然後按下對話框右下角的「開啟（O）」
+然後就又跳出了
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+檔案 "/home/anntony/.ssh/cubian/sftpuser01@cubian.private.key" 
+並非為 FileZilla 支援的格式.
+您想將其轉換成支援的格式?
+
+　　　[　否（N）　]　　　[　是（Y）　]
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+按下「是（Y）」，然後在「選擇轉換後金鑰檔案名稱」對話框的左中間，再選擇「檔案系統」
+在最上面「名稱（N）」的地方直接輸入轉換後ppk檔案的完整路徑
+/home/anntony/.ssh/cubian/sftpuser01@cubian.filezilla.ppk
+然後按下右下角的「儲存（S）」，再按下「設定」對話框左下角的「確認」
+剛才這麼漫長的步驟，就完成了下載服務器用戶sftpuser01的私鑰，
+並且轉換成了FileZilla使用的ppk格式（存放在路徑/home/anntony/.ssh/cubian/sftpuser01@cubian.filezilla.ppk）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+17.斷線，然後重新用剛才下載並轉換成ppk格式的私鑰作sftp連線
+
+按下FileZilla上面有一個紅色叉叉的按鈕「從當前伺服器離線」
+先斷開，因為剛才我們是使用服務器用戶sftpuser01的帳號和輸入密碼的方式來登入的
+現在要直接使用剛才那一把轉換成ppk格式的私鑰來連線Cubian
+直接選工具列最左方的那一顆按鈕「開啟站台管理員，按右鍵顯示站台列表」
+在這一顆按鈕上面按滑鼠右鍵，然後選剛才建立的「sftpuser01@192.168.0.162」
+按下去之後，立刻成功的連線到Cubian服務器
+然後我們再仔細查看一下FileZilla裡面的終端機輸出訊息
+如下：
+狀態:	正在連線到 192.168.0.162:36000 ...
+回應:	fzSftp started
+指令:	keyfile "/home/anntony/.ssh/cubian/sftpuser01@cubian.filezilla.ppk"
+指令:	open "sftpuser01@192.168.0.162" 36000
+狀態:	Connected to 192.168.0.162
+狀態:	正在取得目錄列表...
+指令:	pwd
+回應:	Current directory is: "/"
+狀態:	成功取得目錄列表
+
+可以發現，這一次確實是使用剛才轉換成ppk格式的私鑰來登入Cubian服務器的
+剛才也沒有再要求我們輸入服務器用戶sftpuser01的密碼
+就這麼連進去了，因為工作機這邊有指定私鑰，所以服務器就不再問用戶sftpuser01的密碼了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+18.試著上傳檔案到website或是data-store子目錄
+
+我懶得寫了，這個應該自已試就試得出來了
+想上傳什麼檔案，就按右鍵，然後選「上傳」
+大概就這樣（混）
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+打完收工
