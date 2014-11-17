@@ -195,6 +195,102 @@ sftpuser01:x:1002:1003:,,,:/home/sftpuser01:/usr/sbin/nologin
 sftpuser01:x:1002:1003:,,,:/not/home/sftpuser01:/usr/sbin/nologin
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+5.將用戶www-data加入用戶sftpuser01的群組
 
+這個步驟是為了讓用戶www-data可以存取用戶sftpuser01的網站根目錄而設定的
+（因為nginx worker processes是以用戶www-data的身分執行）
+
+動手之前先看一下目前www-data用戶有加入什麼群組？
+# id www-data
+
+終端機打印了
+uid=33(www-data) gid=33(www-data) groups=33(www-data),1002(gituser01)
+
+現在執行下面的指令把用戶www-data加到用戶sftpuser01的群組
+# usermod -a -G sftpuser01 www-data
+
+加完之後再看一下用戶www-data現在有加入什麼群組？
+# id www-data
+
+終端機打印了
+uid=33(www-data) gid=33(www-data) groups=33(www-data),1002(gituser01),1003(sftpuser01)
+
+上面的訊息告訴我們，用戶www-data目前有加入自已的群組www-data、稍早前加入的gituser01群組、還有sftpuser01群組
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+6.新增sftponly群組
+
+以root身分執行以下指令
+# groupadd sftponly
+
+看一下是否真的新增了sftponly群組？
+# cat /etc/group | grep sftponly
+
+終端機打印了
+sftponly:x:1004:
+
+這樣就確認已經新增了sftponly群組
+新增sftponly群組的目的，是為了稍後我們會調整SSH Server的組態檔
+只要是這個sftponly群組裡的所有用戶，都會被限制只能使用sftp的功能，而無法ssh登入服務器
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+7.將用戶sftpuser01加入sftponly群組
+
+動手之前先看一下現在sftpuser01有加入什麼群組？
+# id sftpuser01
+
+終端機打印了
+uid=1002(sftpuser01) gid=1003(sftpuser01) groups=1003(sftpuser01)
+
+執行以下指令將用戶sftpuser01加入sftponly群組
+# usermod -a -G sftponly sftpuser01
+
+再看看現在用戶sftpuser01有加入什麼群組？
+# id sftpuser01
+
+終端機打印了
+uid=1002(sftpuser01) gid=1003(sftpuser01) groups=1003(sftpuser01),1004(sftponly)
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+8.產生/not/home/sftpuser01目錄，三層目錄的擁有人及群組都是root，權限值755
+
+這個目錄是chroot行為發生之前的用戶sftpuser01的家目錄
+稍後我會回到工作機，然後使用FileZilla（SFTP客戶端程式），
+以用戶sftpuser01的身分登入Cubian服務器，然後身份確認之後登入了Cubian服務器
+用戶sftpuser01會被chroot到一個新的目錄（/home/sftpuser01）
+他會以為那就是他的根目錄（/），但其實不是，那個目錄實際上是Cubian服務器上的（/home/sftpuser01）
+在/etc/passwd裡面規定的用戶sftpuser01的家目錄路徑是/not/home/sftpuser01
+那個是chroot之前的家目錄
+
+我語言能力真的很差，總之先來實作吧
+一樣是在Cubian服務器上，一樣是root身分
+先切換到系統根目錄底下
+# cd /
+
+產生/not/home/sftpuser01目錄
+# mkdir -p /not/home/sftpuser01
+
+把這三層目錄的權限值都改成755
+# chmod -R 755 /not
+
+一層一層檢查權限
+root@cubie:/not/home# cd /
+root@cubie:/# ls -al|grep not
+drwxr-xr-x   3 root root  4096 11月 17 19:26 not
+root@cubie:/# cd not
+root@cubie:/not# ls -al
+總計 12
+drwxr-xr-x  3 root root 4096 11月 17 19:26 .
+drwxr-xr-x 23 root root 4096 11月 17 19:26 ..
+drwxr-xr-x  3 root root 4096 11月 17 19:26 home
+root@cubie:/not# cd home/
+root@cubie:/not/home# ls -al
+總計 12
+drwxr-xr-x 3 root root 4096 11月 17 19:26 .
+drwxr-xr-x 3 root root 4096 11月 17 19:26 ..
+drwxr-xr-x 2 root root 4096 11月 17 19:26 sftpuser01
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+9.修改/home/sftpuser01目錄的擁有人及群組都是root，權限值755
+
+
