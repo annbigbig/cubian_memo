@@ -5,7 +5,196 @@ i.新增一個用戶sftpuser01，他在家目錄下持有一個website子目錄�
 工作機（筆記型電腦）：192.168.0.12
 
 服務器（Cubian）的設定：
-1.新增用戶sftpuser01
-2.設定用戶sftpuser01的shell為
+系統：
+　1.設定系統的umask，從預設的022改成002
+
+用戶與群組
+　2.新增用戶sftpuser01
+　3.修改用戶sftpuser01的shell為/usr/sbin/nologin
+　4.設定用戶sftpuer01的家目錄路徑為/not/home/sftpuser01
+　5.將用戶www-data加入用戶sftpuser01的群組
+　6.新增sftponly群組
+　7.將用戶sftpuser01加入sftponly群組
+
+目錄及檔案
+　8.產生/not/home/sftpuser01目錄，三層目錄的擁有人及群組都是root，權限值755
+　9.修改/home/sftpuser01目錄的擁有人及群組都是root，權限值755
+　10.在/home/sftpuser01目錄裡產生website及data-store兩個子目錄，擁有人及群組都是sftpuser01，權限值775
+　11.刪除/home/sftpuser01目錄內以.開頭的檔案（例：.bashrc、.bash_logout、.profile…因為用不到了）
+
+ssh key pair
+　12.產生用戶sftpuser01的ssh key pair於/not/home/sftpuser01/.ssh/目錄裡，此目錄擁有人及群組皆為sftpuser01，權限值700
+　13.產生/not/home/sftpuser01/.ssh/authorized_keys公鑰認證列表
+
+SSH服務器組態檔
+　14.修改/etc/ssh/sshd_config，然後重新啟動SSH Server
 
 工作機的設定：
+
+細節：
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.設定系統的umask，從預設的022改成002
+
+先解釋一下umask是幹麻的，首先打印一下現在Cubian系統上使用的umask值
+登入Cubian服務器之後，切換到root身分，執行
+# umask
+
+終端機打印了
+0022
+
+切換到/tmp目錄下
+# cd /tmp
+
+產生一個目錄testdir，還有一個空白檔案testfile
+然後再看看他們的權限值是什麼？
+# mkdir testdir
+# touch testfile
+# ls -al | grep test
+
+終端機打印了
+drwxr-xr-x  2 root  root    40 11月 17 16:17 testdir
+-rw-r--r--  1 root  root     0 11月 17 16:17 testfile
+
+剛才新增的目錄/tmp/testdir它的權限值是755，
+而新增的空白檔案/tmp/testfile它的權限值是644
+然後我們Cubian系統上的umask值是0022
+所以你有聯想到這有什麼關係嗎？
+對，umask的值會影響到新增的目錄和檔案的權限值
+如果是新增目錄，那麼新目錄的權限值就會是777-022=755
+如果是新增檔案，那麼新檔案的權限值就會是666-022=644
+你也可以參考umask的man page
+# man umask
+
+或是
+http://www.computerhope.com/unix/uumask.htm
+有更詳細的解釋
+
+現在我要把Cubian服務器的umask改成002
+參考資料一樣是stackoverflow的文章：
+http://stackoverflow.com/questions/10220531/how-to-set-system-wide-umask
+
+因為我希望將來新增目錄的時候，權限預設是775（777 - 002 = 775）
+而新增檔案的時候，權限預設是664（666 - 002 = 664）
+開始修改了
+打開vi文字編輯器，修改/etc/pam.d/common-session
+vi /etc/pam.d/common-session
+
+在檔案的最後面加上這一行
+session optional pam_umask.so
+改好存檔，離開vi文字編輯器
+
+動手修改umask之前先備份一下
+# cp /etc/login.defs /etc/login.defs.default
+
+接著打開vi文字編輯器修改/etc/login.defs組態檔
+# vi /etc/login.defs
+
+把這一行
+UMASK           022
+改成這樣
+UMASK           002
+然後存檔，離開vi文字編輯器
+
+改好之後，要重新開機，新的umask值002才能生效
+Cubian重新開機之後，以預設用戶cubie登入
+切換到/tmp目錄，再試試看新增檔案和目錄，看看剛設定的umask 002有沒有生效？
+$ cd /tmp
+$ touch testfile
+$ mkdir testdir
+$ ls -al | grep test
+
+終端機打印了
+drwxrwxr-x  2 cubie cubie   40 11月 17 17:15 testdir
+-rw-rw-r--  1 cubie cubie    0 11月 17 17:15 testfile
+
+剛才新增的testdir目錄權限是775，而新增的testfile檔案權限是664
+所以你可以確認剛才UMASK 002的設定確實生效了
+
+也可以再執行一次umask指令
+$ umask
+
+終端機打印了
+0002
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.新增用戶sftpuser01
+
+在Cubian服務器上，以預設用戶cubie登入之後，切換為root身分
+$ sudo -i
+
+執行下列指令新增用戶sftpuser01
+# adduser sftpuser01
+
+和終端機交談一下
+Adding user `sftpuser01' ...
+Adding new group `sftpuser01' (1003) ...
+Adding new user `sftpuser01' (1002) with group `sftpuser01' ...
+Creating home directory `/home/sftpuser01' ...
+Copying files from `/etc/skel' ...
+輸入新的 UNIX 密碼：
+再次輸入新的 UNIX 密碼：
+passwd：密碼已成功地變更
+正在改變 sftpuser01 的使用者訊息
+請輸入新值，或直接按 ENTER 鍵以使用預設值
+	全名 []: 
+	房間號碼 []: 
+	工作電話 []: 
+	住家電話 []: 
+	其它 []: 
+Is the information correct? [Y/n] y
+
+看看是不是真的新增了用戶sftpuser01
+# cat /etc/passwd | grep sftpuser01
+
+終端機打印了
+sftpuser01:x:1002:1003:,,,:/home/sftpuser01:/bin/bash
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.修改用戶sftpuser01的shell為/usr/sbin/nologin
+
+還是在Cubian服務器上，還是root身分
+
+看一下現在用戶sftpuser01的shell是什麼？
+# cat /etc/passwd | grep sftpuser01
+
+終端機打印了
+sftpuser01:x:1002:1003:,,,:/home/sftpuser01:/bin/bash
+
+看一下有沒有nologin這個shell存在？
+# which nologin
+
+終端機打印了
+/usr/sbin/nologin
+
+改變用戶sftpuser01的登入shell
+# chsh -s /usr/sbin/nologin sftpuser01
+
+再確認一次用戶sftpuser01的登入shell
+# cat /etc/passwd | grep sftpuser01
+
+終端機打印了
+sftpuser01:x:1002:1003:,,,:/home/sftpuser01:/usr/sbin/nologin
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.設定用戶sftpuer01的家目錄路徑為/not/home/sftpuser01
+
+修改用戶sftpuser01的家目錄路徑之前，先看看現在的家目錄是什麼？
+# cat /etc/passwd | grep sftpuser01
+
+終端機打印了
+sftpuser01:x:1002:1003:,,,:/home/sftpuser01:/usr/sbin/nologin
+
+上面的訊息告訴我們，現在用戶sftpuser01的家目錄路徑是/home/sftpuser01
+然後我們執行下列指令，把用戶sftpuser01的家目錄的路徑改成/not/home/sftpuser01
+# usermod -d /not/home/sftpuser01 sftpuser01
+
+改完之後再看看現在用戶sftpuser01的家目錄是什麼？
+# cat /etc/passwd | grep sftpuser01
+
+終端機打印了
+sftpuser01:x:1002:1003:,,,:/not/home/sftpuser01:/usr/sbin/nologin
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
