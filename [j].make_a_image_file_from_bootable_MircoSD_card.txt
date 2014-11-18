@@ -1,0 +1,91 @@
+j.將目前這張MicroSD卡作成一個影像檔
+
+參考資料：
+http://docs.cubieboard.org/how_to_make_a_sd_image_from_sd_bootable_os
+
+工作環境：作業系統是Linux Mint 17的筆記型電腦上
+
+將cubietruck關機之後，拔下MicroSD卡
+插上SD轉卡或是讀卡機之後，再插到筆記型電腦上
+稍後製作影像檔的過程，都是在筆記型電腦上的終端機操作指令
+在 Menu-> 附屬應用程式 -> 磁碟
+可以確認MicroSD卡的磁碟代號，我假設是/dev/sdb
+你的MicroSD卡的磁碟代號也許和我不同，也許是/dev/sdc或是/dev/sdd甚至是/dev/mmcblk0
+要依照你實際情況來操作，請一定要先確定好MicroSD卡的磁碟代號是什麼
+在搞不清楚MicroSD卡的磁碟代號的狀態下，強行操作下面的指令，
+有可能會造成存放重要資料的分割區被洗乾淨，甚至整個系統硬碟都被洗乾淨的狀況
+
+需要完成的工作列表：
+1.將MicroSD卡的第一和第二分割區分別包成bootfs.tar.gz及rootfs.tar.gz
+2.創造一個空白的影像檔，並寫入uboot
+3.將剛才的空白影像檔劃分成兩個分割區，第一個分割區64MB，其餘的空間都分配給第二個分割區
+4.掛載剛才劃分好的分割區/dev/loop1和/dev/loop2，然後將步驟1產生的bootfs.tar.gz和rootfs.tar.gz倒進去
+5.將製作完成的影像檔寫進另一張MicroSD卡，然後插到cubietruck裡看看能不能正常開機？
+
+細節
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.將MicroSD卡的第一和第二分割區分別包成bootfs.tar.gz及rootfs.tar.gz
+
+關掉cubietruck，拔下MicroSD卡，插上SD轉卡或讀卡機，然後再插上筆記型電腦
+現在的操作是在筆記型電腦上，切換成root身分稍後好作事
+$ sudo -i
+
+然後看一下剛才插入讀卡機後，系統裡把MicroSD卡掛載到那個目錄？
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sda1       453G  123G  308G   29% /
+none            4.0K     0  4.0K    0% /sys/fs/cgroup
+udev            2.8G  4.0K  2.8G    1% /dev
+tmpfs           559M  1.4M  558M    1% /run
+none            5.0M     0  5.0M    0% /run/lock
+none            2.8G   30M  2.7G    2% /run/shm
+none            100M   56K  100M    1% /run/user
+/dev/sdb1        40M  8.6M   28M   24% /media/anntony/boot
+/dev/sdb2        15G  2.2G   12G   16% /media/anntony/cubietruck
+
+其實不用去Menu -> 附屬應用程式 -> 磁碟
+這裡終端機輸出的訊息也清楚告訴了我們，MicroSD卡的磁碟代號是/dev/sdb
+這一張MicroSD卡有兩個分割區
+/dev/sdb1 現在被掛載在本機的/media/anntony/boot　目錄，分割區的大小是40M，目前用掉8.6M
+/dev/sdb2 現在被掛載在本機的/media/antony/cubietruck 目錄，分割區的大小是15G，目前用掉2.2G
+
+切換到root用戶的家目錄下，然後建立一個workdir，然後切換進workdir
+稍後產生的檔案都放在workdir目錄裡
+# cd /root
+# mkdir workdir
+# cd workdir
+
+先來打包第一個分割區
+# umount /dev/sdb1
+# mkdir /mnt/sdb1
+# mount /dev/sdb1 /mnt/sdb1
+# cd /mnt/sdb1
+# tar -cp * | gzip -9 > /root/workdir/bootfs.tar.gz
+# cd /root/workdir
+# umount /mnt/sdb1
+
+接著打包第二個分割區
+# umount /dev/sdb2
+# mkdir /mnt/sdb2
+# mount /dev/sdb2 /mnt/sdb2
+# cd /mnt/sdb2
+# tar -cp * | gzip -9 > /root/workdir/rootfs.tar.gz
+# cd /root/workdir
+# umount /mnt/sdb2
+
+兩個分割區的資料都打包好了，回到workdir看一看
+# cd /root/workdir
+# ls -al
+
+終端機打印了
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
