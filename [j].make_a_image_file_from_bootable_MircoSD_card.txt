@@ -226,8 +226,8 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 （跳過最前面2048個sectors，每個sector是512 bytes）
 # losetup -o 1048576 /dev/loop1 /dev/loop0
 
-格式化/dev/loop1為ext2格式
-# mkfs.ext2 /dev/loop1
+格式化/dev/loop1為vfat格式
+# mkfs.vfat /dev/loop1
 
 設定/dev/loop2的位置是/dev/loop0最前面跳過68157440 bytes
 （跳過最前面133120個sectors，每個sector是512 bytes）
@@ -244,6 +244,26 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 
 把步驟一包好的bootfs.tar.gz解壓縮到 /mnt/loop1目錄
 # tar -zxvf bootfs.tar.gz -C /mnt/loop1
+
+作這個步驟的時候，終端機靠腰了
+config-3.4.79-sun7i
+lost+found/
+script.bin
+script.bin.default
+System.map-3.4.79-sun7i
+uEnv.txt
+uEnv.txt.default
+uImage
+tar: uImage：無法建立符號連結到 「uImage-3.4.79-sun7i」: 此項操作並不被允許
+uImage-3.4.79-sun7i
+xxx.fex
+tar: 由於先前錯誤而以失敗狀態離開
+
+因為/dev/loop1是vfat格式
+然後不允許建立uImage -> uImage-3.4.79-sun7i
+這樣的Symbolic Link
+那只好這樣子了
+# mv /mnt/loop1/uImage-3.4.79-sun7i /mnt/loop1/uImage
 
 再新增一個/mnt/loop2目錄
 # mkdir /mnt/loop2
@@ -278,3 +298,187 @@ drwx------ 10 root root       4096 11月 18 16:23 ..
 -rw-r--r--  1 root root     261100  1月  7  2014 u-boot-sunxi-with-spl-ct-20140107.bin
 
 那個disk.img就是我們剛才作好的影像檔
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+5.將製作完成的影像檔寫進另一張MicroSD卡，然後插到cubietruck裡看看能不能正常開機？
+
+把剛才插入筆記型電腦的那張MicroSD卡退出來（上面是我們的Cubian x1系統）
+我找了另外一張8 GB的MicroSD卡，要用它來實驗剛才我們作的影像檔有沒有成功？
+把這張8 GB的MicroSD卡插上讀卡機，再插上筆記型電腦，
+在終端機下以root身分執行：
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sda1       453G  126G  304G   30% /
+none            4.0K     0  4.0K    0% /sys/fs/cgroup
+udev            2.8G  4.0K  2.8G    1% /dev
+tmpfs           559M  1.4M  558M    1% /run
+none            5.0M     0  5.0M    0% /run/lock
+none            2.8G   14M  2.8G    1% /run/shm
+none            100M   40K  100M    1% /run/user
+/dev/sdb1       7.1G  5.8G  900M   87% /media/anntony/5f70abf0-69bc-468e-b875-5cf1378b476b
+
+上面有一個舊的分割區，還有資料5.8 GB，
+不過我確認過了沒什麼重要的資料，先卸載/dev/sdb1
+# umount /dev/sdb1
+
+因為這張8GB的MicroSD卡只有一個分割區，
+把這個分割區格式化，就把上面所有資料都洗乾淨了
+執行
+# mkfs.ext4 /dev/sdb1
+
+終端機輸出了
+mke2fs 1.42.9 (4-Feb-2014)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=0 blocks, Stripe width=0 blocks
+471424 inodes, 1884415 blocks
+94220 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=1933574144
+58 block groups
+32768 blocks per group, 32768 fragments per group
+8128 inodes per group
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done 
+
+然後就切換到剛才的工作目錄
+# cd /root/workdir
+
+開始寫入剛才我們製作的影像檔到這張8GB的MicroSD卡上
+# date; dd if=disk.img of=/dev/sdb bs=4096; sync; date
+
+終端機輸出了
+三 11月 19 01:21:02 CST 2014
+輸入 625000+0 個紀錄
+輸出 625000+0 個紀錄
+複製了 2560000000 個位元組 (2.6 GB), 485.673 s, 5.3 MB/s
+三 11月 19 01:29:08 CST 2014
+
+現在已經把剛才製作的disk.img寫到這張8GB的MicroSD卡上了
+我們把讀卡機拔出來，再插回筆記型電腦，再執行
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sda1       453G  126G  304G   30% /
+none            4.0K     0  4.0K    0% /sys/fs/cgroup
+udev            2.8G  4.0K  2.8G    1% /dev
+tmpfs           559M  1.4M  558M    1% /run
+none            5.0M     0  5.0M    0% /run/lock
+none            2.8G   24M  2.8G    1% /run/shm
+none            100M   44K  100M    1% /run/user
+/dev/sdb1       2.4G  7.9M  2.4G    1% /media/anntony/CC6C-C98F
+/dev/sdb2       2.3G  2.3G     0  100% /media/anntony/2323799d-f07a-4bc6-8a22-e3bfbccf4260
+
+照上面的訊息來看，/dev/sdb1的大小有點奇怪，應該要是64MB，可是卻是2.4G
+還有/dev/sdb2只有2.3G然後100%全部用光光
+先缷載它們
+# umount /dev/sdb*
+
+然後調整一下分割區大小
+# fdisk /dev/sdb
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/sdb: 7742 MB，7742685184 位元組
+239 磁頭，62 磁區/磁軌，1020 磁柱，總計 15122432 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0xc173d21c
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/sdb1            2048      133119       65536   83  Linux
+/dev/sdb2          133120     4999999     2433440   83  Linux
+
+命令 (m 以獲得說明)： d
+分割區編號 (1-4): 2
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/sdb: 7742 MB，7742685184 位元組
+239 磁頭，62 磁區/磁軌，1020 磁柱，總計 15122432 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0xc173d21c
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/sdb1            2048      133119       65536   83  Linux
+
+命令 (m 以獲得說明)： w
+分割表已變更！
+
+呼叫 ioctl() 以重新讀取分割表。
+同步磁碟。
+anntony-Lenovo-B590 workdir # fdisk /dev/sdb
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/sdb: 7742 MB，7742685184 位元組
+74 磁頭，1 磁區/磁軌，204357 磁柱，總計 15122432 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0xc173d21c
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/sdb1            2048      133119       65536   83  Linux
+
+命令 (m 以獲得說明)： n
+Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): 
+Using default response p
+分割區編號 (1-4, 預設 2)： 
+使用預設值 2
+起初 磁區 (133120-15122431, 預設 133120)： 
+使用預設值 133120
+最後 磁區, +磁區 或 +大小{K,M,G} (133120-15122431, 預設 15122431)： 
+使用預設值 15122431
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/sdb: 7742 MB，7742685184 位元組
+74 磁頭，1 磁區/磁軌，204357 磁柱，總計 15122432 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0xc173d21c
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/sdb1            2048      133119       65536   83  Linux
+/dev/sdb2          133120    15122431     7494656   83  Linux
+
+命令 (m 以獲得說明)： w
+分割表已變更！
+
+呼叫 ioctl() 以重新讀取分割表。
+同步磁碟。
+
+anntony-Lenovo-B590 workdir # e2fsck -f /dev/sdb2
+e2fsck 1.42.9 (4-Feb-2014)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/sdb2: 98018/152304 files (0.1% non-contiguous), 602695/608360 blocks
+anntony-Lenovo-B590 workdir # resize2fs /dev/sdb2
+resize2fs 1.42.9 (4-Feb-2014)
+Resizing the filesystem on /dev/sdb2 to 1873664 (4k) blocks.
+The filesystem on /dev/sdb2 is now 1873664 blocks long.
+
+
+
+
