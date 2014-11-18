@@ -63,7 +63,7 @@ none            100M   56K  100M    1% /run/user
 # mount /dev/sdb1 /mnt/sdb1
 # cd /mnt/sdb1
 # tar -cp * | gzip -9 > /root/workdir/bootfs.tar.gz
-# cd /root/workdir
+# cd /
 # umount /mnt/sdb1
 
 接著打包第二個分割區
@@ -72,7 +72,7 @@ none            100M   56K  100M    1% /run/user
 # mount /dev/sdb2 /mnt/sdb2
 # cd /mnt/sdb2
 # tar -cp * | gzip -9 > /root/workdir/rootfs.tar.gz
-# cd /root/workdir
+# cd /
 # umount /mnt/sdb2
 
 兩個分割區的資料都打包好了，回到workdir看一看
@@ -80,12 +80,201 @@ none            100M   56K  100M    1% /run/user
 # ls -al
 
 終端機打印了
-
-
-＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-
-
-＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-
+總計 1005760
+drwxr-xr-x  2 root root       4096 11月 18 16:44 .
+drwx------ 10 root root       4096 11月 18 16:23 ..
+-rw-r--r--  1 root root    6478121 11月 18 16:35 bootfs.tar.gz
+-rw-r--r--  1 root root 1023403555 11月 18 16:51 rootfs.tar.gz
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.創造一個空白的影像檔，並寫入uboot
+
+切換到工作目錄
+# cd /root/workdir
+
+下載bootloader
+# wget http://dl.cubieboard.org/software/a20-cubietruck/lubuntu/ct-lubuntu-card0-v1.00/u-boot-sunxi-with-spl-ct-20140107.bin
+
+產生一個約2.38GB大小的空白影像檔
+（5000000 X 512 bytes = 2560000000 bytes = 2500000 Kbytes = 2441.40625 Mbytes = 2.384185791 Gbytes）
+# dd if=/dev/zero of=disk.img count=5000000
+
+將/dev/loop0裝置代號與剛才的空白影像檔disk.img作關聯
+# losetup /dev/loop0 disk.img
+
+清空影像檔最前面1024K的地方
+# dd if=/dev/zero of=/dev/loop0 bs=1k count=1024
+
+跳過目的地前面8個1024 bytes不要寫，然後寫入bootloader到空白影像檔（/dev/loop0）
+# dd if=u-boot-sunxi-with-spl-ct-20140107.bin of=/dev/loop0 bs=1024 seek=8
+
+同步一下，確定都寫進去了
+# sync
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.將剛才的空白影像檔劃分成兩個分割區，第一個分割區64MB，其餘的空間都分配給第二個分割區
+
+# fdisk /dev/loop0
+
+裝置不含有效的 DOS 分割表，也不含 Sun、SGI 或 OSF 磁碟標籤
+以磁碟識別碼 0x0d67df8e 建立新的 DOS 磁碟標籤。
+變更將僅存於記憶體之中，直到您決定寫入它們。
+在此之後，前一個內容當然將無法回復。
+
+警告：分割表 4 的無效旗標 0x0000 將由 w(rite) 所修正
+
+命令 (m 以獲得說明)： m
+命令動作
+   a   切換可開機的旗標
+   b   編輯 bsd 磁碟標籤
+   c   切換 DOS 相容性旗標
+   d   刪除分割區
+   l   列出已知分割區類型
+   m   印出這個選單
+   n   加入新的分割區
+   o   建立新的空白 DOS 分割表
+   p   印出分割表
+   q   離開而不需儲存變更
+   s   建立新的空白 Sun 磁碟標籤
+   t   變更分割區系統識別號
+   u   變更顯示/輸入單位
+   v   驗證分割表
+   w   分割表寫入磁碟然後離開
+   x   額外功能 (專家限用)
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/loop0: 2560 MB，2560000000 位元組
+255 磁頭，63 磁區/磁軌，311 磁柱，總計 5000000 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0x0d67df8e
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+
+命令 (m 以獲得說明)： n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): 
+Using default response p
+分割區編號 (1-4, 預設 1)： 
+使用預設值 1
+起初 磁區 (2048-4999999, 預設 2048)： 
+使用預設值 2048
+最後 磁區, +磁區 或 +大小{K,M,G} (2048-4999999, 預設 4999999)： 133119
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/loop0: 2560 MB，2560000000 位元組
+255 磁頭，63 磁區/磁軌，311 磁柱，總計 5000000 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0x0d67df8e
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/loop0p1            2048      133119       65536   83  Linux
+
+命令 (m 以獲得說明)： n
+Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): 
+Using default response p
+分割區編號 (1-4, 預設 2)： 
+使用預設值 2
+起初 磁區 (133120-4999999, 預設 133120)： 
+使用預設值 133120
+最後 磁區, +磁區 或 +大小{K,M,G} (133120-4999999, 預設 4999999)： 
+使用預設值 4999999
+
+命令 (m 以獲得說明)： p
+
+磁碟 /dev/loop0: 2560 MB，2560000000 位元組
+255 磁頭，63 磁區/磁軌，311 磁柱，總計 5000000 磁區
+單位 = 磁區 之於 1 * 512 = 512 位元組
+磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
+I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
+磁碟識別碼：0x0d67df8e
+
+所用裝置 開機      開始         結束      區塊   識別號  系統
+/dev/loop0p1            2048      133119       65536   83  Linux
+/dev/loop0p2          133120     4999999     2433440   83  Linux
+
+命令 (m 以獲得說明)： w
+分割表已變更！
+
+呼叫 ioctl() 以重新讀取分割表。
+
+警告：重新讀取分割表失敗並產生錯誤 22: 不適用的引數。
+內核仍然使用舊的表格。新的表格將於下一次
+重新開機時使用，或是您執行 partprobe(8) 或 kpartx(8) 之後。
+同步磁碟。
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.掛載剛才劃分好的分割區/dev/loop1和/dev/loop2，然後將步驟1產生的bootfs.tar.gz和rootfs.tar.gz倒進去
+
+卸載/dev/loop0之後，再重新掛載它一次
+# cd /root/workdir
+# losetup -d /dev/loop0
+# losetup /dev/loop0
+# losetup /dev/loop0 disk.img
+
+設定/dev/loop1的位置是從/dev/loop0最前面跳過1048576 bytes
+（跳過最前面2048個sectors，每個sector是512 bytes）
+# losetup -o 1048576 /dev/loop1 /dev/loop0
+
+格式化/dev/loop1為ext2格式
+# mkfs.ext2 /dev/loop1
+
+設定/dev/loop2的位置是/dev/loop0最前面跳過68157440 bytes
+（跳過最前面133120個sectors，每個sector是512 bytes）
+# losetup -o 68157440 /dev/loop2 /dev/loop0
+
+格式化/dev/loop2為ext4格式
+# mkfs.ext4 /dev/loop2
+
+新增一個/mnt/loop1目錄
+# mkdir /mnt/loop1
+
+把/dev/loop1 掛載在 /mnt/loop1
+# mount /dev/loop1 /mnt/loop1
+
+把步驟一包好的bootfs.tar.gz解壓縮到 /mnt/loop1目錄
+# tar -zxvf bootfs.tar.gz -C /mnt/loop1
+
+再新增一個/mnt/loop2目錄
+# mkdir /mnt/loop2
+
+把/dev/loop2 掛載在 /mnt/loop2
+# mount /dev/loop2 /mnt/loop2
+
+把步驟一包好的rootfs.tar.gz解壓縮到 /mnt/loop2目錄
+# tar -zxvf rootfs.tar.gz -C /mnt/loop2
+
+（有點久，要耐心等…我的筆記型電腦大概要三分鐘才能倒完）
+好了就給它同步一下，確認都有寫進硬碟
+# sync
+
+然後卸載掉相關的掛載目錄和loop裝置代號
+# umount /mnt/loop2
+# umount /mnt/loop1
+# losetup -d /dev/loop2
+# losetup -d /dev/loop1
+# losetup -d /dev/loop0
+
+這樣影像檔就完成了，看一下/root/workdir目錄
+# ls -al /root/workdir
+
+終端機打印了
+總計 3506020
+drwxr-xr-x  2 root root       4096 11月 18 23:06 .
+drwx------ 10 root root       4096 11月 18 16:23 ..
+-rw-r--r--  1 root root    6478121 11月 18 16:35 bootfs.tar.gz
+-rw-r--r--  1 root root 2560000000 11月 18 23:58 disk.img
+-rw-r--r--  1 root root 1023403555 11月 18 16:51 rootfs.tar.gz
+-rw-r--r--  1 root root     261100  1月  7  2014 u-boot-sunxi-with-spl-ct-20140107.bin
+
+那個disk.img就是我們剛才作好的影像檔
