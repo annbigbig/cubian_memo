@@ -222,17 +222,20 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 # losetup /dev/loop0
 # losetup /dev/loop0 disk.img
 
-設定/dev/loop1的位置是從/dev/loop0最前面跳過1048576 bytes
-（跳過最前面2048個sectors，每個sector是512 bytes）
-# losetup -o 1048576 /dev/loop1 /dev/loop0
+設定/dev/loop1的位置是從/dev/loop0最前面跳過1048576 bytes，然後大小為 67108352 bytes
+選項 -o ：　跳過最前面2048個sectors，每個sector是512 bytes，故 2048 X 512 bytes = 1048576 bytes
+選項 --sizelimit　：　此分割區的大小 = ( 133119 - 2048 ) X 512 bytes = 67108352 bytes
+算法參考資料：https://www.suse.com/communities/conversations/accessing-file-systems-disk-block-image-files/
+# losetup -o 1048576 --sizelimit 67108352 /dev/loop1 /dev/loop0
 
-格式化/dev/loop1為vfat格式
-# mkfs.vfat /dev/loop1
+格式化/dev/loop1為ext4格式
+# mkfs.ext4 /dev/loop1
 
 設定/dev/loop2的位置是/dev/loop0最前面跳過68157440 bytes
-（跳過最前面133120個sectors，每個sector是512 bytes）
+（跳過最前面133120個sectors，每個sector是512 bytes，故133120 X 512 bytes = 68157440 bytes）
 # losetup -o 68157440 /dev/loop2 /dev/loop0
 
+（不要作這個步驟，剛才/dev/loop1已經格式化過一次了，再格式化的話，你的影像檔superblock會亂掉）
 格式化/dev/loop2為ext4格式
 # mkfs.ext4 /dev/loop2
 
@@ -244,26 +247,6 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 
 把步驟一包好的bootfs.tar.gz解壓縮到 /mnt/loop1目錄
 # tar -zxvf bootfs.tar.gz -C /mnt/loop1
-
-作這個步驟的時候，終端機靠腰了
-config-3.4.79-sun7i
-lost+found/
-script.bin
-script.bin.default
-System.map-3.4.79-sun7i
-uEnv.txt
-uEnv.txt.default
-uImage
-tar: uImage：無法建立符號連結到 「uImage-3.4.79-sun7i」: 此項操作並不被允許
-uImage-3.4.79-sun7i
-xxx.fex
-tar: 由於先前錯誤而以失敗狀態離開
-
-因為/dev/loop1是vfat格式
-然後不允許建立uImage -> uImage-3.4.79-sun7i
-這樣的Symbolic Link
-那只好這樣子了
-# mv /mnt/loop1/uImage-3.4.79-sun7i /mnt/loop1/uImage
 
 再新增一個/mnt/loop2目錄
 # mkdir /mnt/loop2
@@ -369,18 +352,22 @@ Writing superblocks and filesystem accounting information: done
 
 終端機打印了
 檔案系統        容量  已用  可用 已用% 掛載點
-/dev/sda1       453G  126G  304G   30% /
+/dev/sda1       453G  127G  304G   30% /
 none            4.0K     0  4.0K    0% /sys/fs/cgroup
 udev            2.8G  4.0K  2.8G    1% /dev
 tmpfs           559M  1.4M  558M    1% /run
 none            5.0M     0  5.0M    0% /run/lock
-none            2.8G   24M  2.8G    1% /run/shm
-none            100M   44K  100M    1% /run/user
-/dev/sdb1       2.4G  7.9M  2.4G    1% /media/anntony/CC6C-C98F
-/dev/sdb2       2.3G  2.3G     0  100% /media/anntony/2323799d-f07a-4bc6-8a22-e3bfbccf4260
+none            2.8G   27M  2.8G    1% /run/shm
+none            100M   36K  100M    1% /run/user
+/dev/sdb1        58M  9.2M   45M   18% /media/anntony/58c8be63-e214-43a0-8509-119126f7b0f7
+/dev/sdb2       2.3G  2.3G     0  100% /media/anntony/8779eff6-98f7-4826-b119-e09fff6274e6
 
-照上面的訊息來看，/dev/sdb1的大小有點奇怪，應該要是64MB，可是卻是2.4G
-還有/dev/sdb2只有2.3G然後100%全部用光光
+照上面的訊息來看，/dev/sdb2的磁碟空間只有2.3G
+然後是100%全部用光光的狀態
+因為我們在步驟4產生的/root/workdir/disk.img就是只有2.3G大小
+直接dd刷進去8GB的MicroSD卡，就是這樣子，第二個分割區/dev/sdb2小氣巴拉只用了2.3G的狀態
+我們需要再一個步驟，也就是把/dev/sdb2分割區的大小擴充到這張8GB MicroSD卡的極限
+
 先缷載它們
 # umount /dev/sdb*
 
@@ -394,7 +381,7 @@ none            100M   44K  100M    1% /run/user
 單位 = 磁區 之於 1 * 512 = 512 位元組
 磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
 I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
-磁碟識別碼：0xc173d21c
+磁碟識別碼：0xfa6605d2
 
 所用裝置 開機      開始         結束      區塊   識別號  系統
 /dev/sdb1            2048      133119       65536   83  Linux
@@ -410,7 +397,7 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 單位 = 磁區 之於 1 * 512 = 512 位元組
 磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
 I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
-磁碟識別碼：0xc173d21c
+磁碟識別碼：0xfa6605d2
 
 所用裝置 開機      開始         結束      區塊   識別號  系統
 /dev/sdb1            2048      133119       65536   83  Linux
@@ -429,7 +416,7 @@ anntony-Lenovo-B590 workdir # fdisk /dev/sdb
 單位 = 磁區 之於 1 * 512 = 512 位元組
 磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
 I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
-磁碟識別碼：0xc173d21c
+磁碟識別碼：0xfa6605d2
 
 所用裝置 開機      開始         結束      區塊   識別號  系統
 /dev/sdb1            2048      133119       65536   83  Linux
@@ -454,7 +441,7 @@ Using default response p
 單位 = 磁區 之於 1 * 512 = 512 位元組
 磁區大小 (邏輯/實體)：512 位元組 / 512 位元組
 I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
-磁碟識別碼：0xc173d21c
+磁碟識別碼：0xfa6605d2
 
 所用裝置 開機      開始         結束      區塊   識別號  系統
 /dev/sdb1            2048      133119       65536   83  Linux
@@ -465,7 +452,6 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 
 呼叫 ioctl() 以重新讀取分割表。
 同步磁碟。
-
 anntony-Lenovo-B590 workdir # e2fsck -f /dev/sdb2
 e2fsck 1.42.9 (4-Feb-2014)
 Pass 1: Checking inodes, blocks, and sizes
@@ -473,12 +459,37 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-/dev/sdb2: 98018/152304 files (0.1% non-contiguous), 602695/608360 blocks
+/dev/sdb2: 98018/152304 files (0.1% non-contiguous), 602706/608360 blocks
 anntony-Lenovo-B590 workdir # resize2fs /dev/sdb2
 resize2fs 1.42.9 (4-Feb-2014)
 Resizing the filesystem on /dev/sdb2 to 1873664 (4k) blocks.
 The filesystem on /dev/sdb2 is now 1873664 blocks long.
 
+這樣就把MicroSD卡的第二個分割區/dev/sdb2擴張到極限了
+把讀卡機再退出筆記型電腦，再插回去
+然後再執行一次
+# df -h
 
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+/dev/sda1       453G  127G  304G   30% /
+none            4.0K     0  4.0K    0% /sys/fs/cgroup
+udev            2.8G  4.0K  2.8G    1% /dev
+tmpfs           559M  1.4M  558M    1% /run
+none            5.0M     0  5.0M    0% /run/lock
+none            2.8G   27M  2.8G    1% /run/shm
+none            100M   40K  100M    1% /run/user
+/dev/sdb1        58M  9.2M   45M   18% /media/anntony/58c8be63-e214-43a0-8509-119126f7b0f7
+/dev/sdb2       7.0G  2.3G  4.4G   34% /media/anntony/8779eff6-98f7-4826-b119-e09fff6274e6
 
+哦哦，看起來不錯
+/dev/sdb2變成了7.0G，用掉的依然是2.3G，然後剩下4.4G可以用，已經用掉的比例是34%
+現在把MicroSD缷載
+# umount /dev/sdb*
 
+然後拔出讀卡機，把MicroSD卡插到cubietruck開機試試看
+如果可以正常開機，就表示你剛才製作的影像檔 /root/workdir/disk.img
+已經成功了，把這個影像檔好好保管，它將來會為你省下很多時間
+共勉之
+
+打完收工
