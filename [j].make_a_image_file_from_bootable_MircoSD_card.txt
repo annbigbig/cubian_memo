@@ -22,6 +22,14 @@ http://docs.cubieboard.org/how_to_make_a_sd_image_from_sd_bootable_os
 4.掛載剛才劃分好的分割區/dev/loop1和/dev/loop2，然後將步驟1產生的bootfs.tar.gz和rootfs.tar.gz倒進去
 5.將製作完成的影像檔寫進另一張MicroSD卡，然後插到cubietruck裡看看能不能正常開機？
 
+影像檔長得像什麼？
+▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅
+█（1024K)　█　　/dev/loop1　　　　　　　█　　　　　/dev/loop2　　　　　　　　　　　█　
+▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅
+最前面的1024K有分割表和bootloader
+再來是第一個分割區/dev/loop0p1，稍後會給它命名為/dev/loop1
+最後是第二個分割區/dev/loop0p2，稍後會給它命名為/dev/loop2
+
 細節
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.將MicroSD卡的第一和第二分割區分別包成bootfs.tar.gz及rootfs.tar.gz
@@ -235,7 +243,6 @@ I/O 大小 (最小/最佳化)：512 位元組 / 512 位元組
 （跳過最前面133120個sectors，每個sector是512 bytes，故133120 X 512 bytes = 68157440 bytes）
 # losetup -o 68157440 /dev/loop2 /dev/loop0
 
-（不要作這個步驟，剛才/dev/loop1已經格式化過一次了，再格式化的話，你的影像檔superblock會亂掉）
 格式化/dev/loop2為ext4格式
 # mkfs.ext4 /dev/loop2
 
@@ -339,7 +346,7 @@ Writing superblocks and filesystem accounting information: done
 開始寫入剛才我們製作的影像檔到這張8GB的MicroSD卡上
 # date; dd if=disk.img of=/dev/sdb bs=4096; sync; date
 
-終端機輸出了
+耐心等待一下，幾分鐘後，終端機輸出了
 三 11月 19 01:21:02 CST 2014
 輸入 625000+0 個紀錄
 輸出 625000+0 個紀錄
