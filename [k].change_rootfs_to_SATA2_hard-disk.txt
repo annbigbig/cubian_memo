@@ -1,0 +1,191 @@
+k.接上我的750 GB SATA2硬碟，並使用/dev/sda1當成Cubian系統的rootfs，而/dev/sda2要自動掛載成/home
+
+參考資料：
+http://www.cubieforums.com/index.php?topic=2639.0
+https://wiki.debian.org/fstab
+
+需要完成的工作列表：
+1.將cubietruck接上SATA2硬碟後，分割成兩個分割區/dev/sda1和/dev/sda2，並格式化成ext4
+2.將MicroSD卡的第二個分割區的資料/dev/mmcblk0p2的資料全部複製到SATA2硬碟的第一個分割區/dev/sda1
+3.修改/boot/uEnv.txt，設定系統根目錄由原先的/dev/mmcblk0p2改為/dev/sda1
+4.重新開機觀察設定是否生效？
+
+
+細節
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.將cubietruck接上SATA2硬碟後，分割成兩個分割區/dev/sda1和/dev/sda2，並格式化成ext4
+
+cubietruck開機之後，登入成root身分
+確定現在/dev/sda（你的SATA2硬碟）沒有被掛載
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+rootfs          7.1G  2.3G  4.5G   34% /
+/dev/root       7.1G  2.3G  4.5G   34% /
+devtmpfs        887M     0  887M    0% /dev
+tmpfs           197M  564K  197M    1% /run
+tmpfs           5.0M     0  5.0M    0% /run/lock
+tmpfs           394M     0  394M    0% /run/shm
+/dev/mmcblk0p1   62M   14M   46M   23% /boot
+tmpfs           983M   16K  983M    1% /tmp
+tmpfs           983M     0  983M    0% /var/tmp
+
+接下來要執行fdisk，將SATA2硬碟作成兩個分割區
+第一個分割區 /dev/sda1 我希望的大小是128 GB
+然後剩下的硬碟空間全都分配給 /dev/sda2
+那麼問題來了，第一個分割區/dev/sda1的起始sector是2048，那麼結束的sector是多少呢？
+
+待老夫掐指一算：
+( x - 2048 + 1) X 512 bytes = 128 Gbytes
+( x - 2048 + 1 ) X 512 bytes = 128 X 1024 X 1024 X 1024 bytes
+x - 2047 = 256 X 1024 X 1024
+x -2047 = 268435456
+x = 268437503
+
+上面的算式告訴我們，/dev/sda1結束的sector是268437503
+現在執行fdisk分割硬碟
+root@cubie:~# fdisk /dev/sda
+
+The device presents a logical sector size that is smaller than
+the physical sector size. Aligning to a physical sector (or optimal
+I/O) size boundary is recommended, or performance may be impacted.
+
+Command (m for help): m
+Command action
+   a   toggle a bootable flag
+   b   edit bsd disklabel
+   c   toggle the dos compatibility flag
+   d   delete a partition
+   l   list known partition types
+   m   print this menu
+   n   add a new partition
+   o   create a new empty DOS partition table
+   p   print the partition table
+   q   quit without saving changes
+   s   create a new empty Sun disklabel
+   t   change a partition's system id
+   u   change display/entry units
+   v   verify the partition table
+   w   write table to disk and exit
+   x   extra functionality (experts only)
+
+Command (m for help): p
+
+Disk /dev/sda: 750.2 GB, 750156374016 bytes
+255 heads, 63 sectors/track, 91201 cylinders, total 1465149168 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+Disk identifier: 0x8bc2e58f
+
+   Device Boot      Start         End      Blocks   Id  System
+
+Command (m for help): n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): 
+Using default response p
+Partition number (1-4, default 1): 
+Using default value 1
+First sector (2048-1465149167, default 2048): 
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-1465149167, default 1465149167): 268437503
+
+Command (m for help): p
+
+Disk /dev/sda: 750.2 GB, 750156374016 bytes
+255 heads, 63 sectors/track, 91201 cylinders, total 1465149168 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+Disk identifier: 0x8bc2e58f
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1            2048   268437503   134217728   83  Linux
+
+Command (m for help): n
+Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): 
+Using default response p
+Partition number (1-4, default 2): 
+Using default value 2
+First sector (268437504-1465149167, default 268437504): 
+Using default value 268437504
+Last sector, +sectors or +size{K,M,G} (268437504-1465149167, default 1465149167): 
+Using default value 1465149167
+
+Command (m for help): p
+
+Disk /dev/sda: 750.2 GB, 750156374016 bytes
+255 heads, 63 sectors/track, 91201 cylinders, total 1465149168 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+Disk identifier: 0x8bc2e58f
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1            2048   268437503   134217728   83  Linux
+/dev/sda2       268437504  1465149167   598355832   83  Linux
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+root@cubie:~# 
+
+值得一提的是，第一個分割區/dev/sda1的起始sector是2048
+第二個分割區/dev/sdb2的起始sector是268437504
+這兩個數字最好都可以被8整除，我的SATA硬碟是WD的，後來出的比較新的硬碟
+每一個實體的sector都會是4096 bytes，雖然邏輯上還是每一個sector是512 bytes
+你可以在上面的終端機輸出訊息中，發現
+Sector size (logical/physical): 512 bytes / 4096 bytes
+這一行的存在
+這裡有一篇資料很有參考價值
+http://askubuntu.com/questions/156994/partition-does-not-start-on-physical-sector-boundary
+為什麼會找到這一篇，是因為我稍早在分割這個硬碟時，算錯了/dev/sda2的起始sector的數字
+那個我算錯的/dev/sda2的起始sector的數字不能被8整除，所以fdisk程式出現了這樣的錯誤訊息
+Partition 2 does not start on physical sector boundary
+我其實也是似懂非懂，如果硬要我現在解釋出為什麼會有這個奇怪的警告訊息產生
+我只能說：
+這好像是在你家社區裡的公共地下室裡
+所有住戶的車位被劃成一格一格，你的車車要剛好停在格子裡面
+可是突然來了個白目的住戶，把他的車停在兩個車位的正中間
+他一台車就占掉了兩個車位，你看到的時候很火大，想說為什麼不再停左邊一點？或是再停右邊一點都好？
+你一定要那麼故意停在兩個車位的中間嗎？
+很抱歉這是目前為止我能想到的解釋
+反正你遇到這種新式的硬碟，一個physical sector不再是熟悉的512 bytes而是4096 bytes的時候
+你在用fdisk劃分割區的時候，就是把握一個原則，每個分割區開始的sector都要可以被8整除
+這樣就不會跑出
+Partition 2 does not start on physical sector boundary
+這種警告訊息出來
+
+分割好了/dev/sda1和/dev/sda2
+就把它們兩個都格式化成ext4的檔案系統
+指令是
+# mkfs.ext4 /dev/sda1
+# mkfs.ext4 /dev/sda2
+
+終端機的輸出訊息我就不放上了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
