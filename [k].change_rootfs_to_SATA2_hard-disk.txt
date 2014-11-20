@@ -9,7 +9,9 @@ https://wiki.debian.org/fstab
 2.將MicroSD卡的第二個分割區的資料/dev/mmcblk0p2的資料全部複製到SATA2硬碟的第一個分割區/dev/sda1
 3.修改/boot/uEnv.txt，設定系統根目錄由原先的/dev/mmcblk0p2改為/dev/sda1
 4.重新開機觀察設定是否生效？
-
+5.把/home目錄裡的資料複製到硬碟的第二個分割區/dev/sda2
+6.修改/etc/fstab設定開機時自動將/dev/sda2掛載為/home
+7.重新開機觀察設定是否生效？
 
 細節
 
@@ -288,4 +290,81 @@ tmpfs           983M   16K  983M    1% /tmp
 tmpfs           983M     0  983M    0% /var/tmp
 
 耶耶耶！我的rootfs變成了126G
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+5.把/home目錄裡的資料複製到硬碟的第二個分割區/dev/sda2
+
+先產生一個/mnt/sda2目錄
+# mkdir /mnt/sda2
+
+把/dev/sda2掛載到/mnt/sda2目錄
+# mount /dev/sda2 /mnt/sda2
+
+看一下有沒有真的掛載起來
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+rootfs          126G  2.4G  118G    2% /
+/dev/root       126G  2.4G  118G    2% /
+devtmpfs        887M     0  887M    0% /dev
+tmpfs           197M  568K  197M    1% /run
+tmpfs           5.0M     0  5.0M    0% /run/lock
+tmpfs           394M     0  394M    0% /run/shm
+/dev/mmcblk0p1   62M   14M   46M   23% /boot
+tmpfs           983M   16K  983M    1% /tmp
+tmpfs           983M     0  983M    0% /var/tmp
+/dev/sda2       562G  198M  533G    1% /mnt/sda2
+
+切換到/home目錄
+# cd /home
+
+然後把資料複製到/mnt/sda2
+# tar --backup -c * | tar -C /mnt/sda2 -xv
+# sync
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+6.修改/etc/fstab設定開機時自動將/dev/sda2掛載為/home
+
+修改之前先備份一下，以免改爛了救不回來
+# cp /etc/fstab /etc/fstab.default
+
+打開vi文字編輯器，修改/etc/fstab
+# vi /etc/fstab
+
+這裡直接給出我的/etc/fstab的內容，如下
+# UNCONFIGURED FSTAB FOR BASE SYSTEM
+#<file system>  <mount point>   <type>  <options>       <dump>  <pass>
+/dev/mmcblk0p2  /               ext4    defaults        0       1
+/dev/mmcblk0p1  /boot           ext4    defaults        0       2
+/dev/sda2       /home           ext4    defaults        0       0
+tmpfs   /tmp    tmpfs   defaults        0       0
+tmpfs   /var/tmp        tmpfs   defaults        0       0
+
+改好之後就存檔離開
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+7.重新開機觀察設定是否生效？
+
+# init 6
+
+重新開機之後，執行
+# df -h
+
+終端機打印了
+檔案系統        容量  已用  可用 已用% 掛載點
+rootfs          126G  2.4G  118G    2% /
+/dev/root       126G  2.4G  118G    2% /
+devtmpfs        887M     0  887M    0% /dev
+tmpfs           197M  568K  197M    1% /run
+tmpfs           5.0M  8.0K  5.0M    1% /run/lock
+tmpfs           394M     0  394M    0% /run/shm
+/dev/mmcblk0p1   62M   14M   46M   23% /boot
+/dev/sda2       562G  453M  533G    1% /home
+tmpfs           983M   16K  983M    1% /tmp
+tmpfs           983M     0  983M    0% /var/tmp
+
+耶耶耶，看到/home目錄了嗎？還有533G可以用哦，這樣我就爽了啊啊啊
+打完收工
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
