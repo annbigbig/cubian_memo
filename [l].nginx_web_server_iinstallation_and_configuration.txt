@@ -1,0 +1,221 @@
+l.安裝nginx服務器 + php-fpm
+
+切換成root身分
+$ sudo -i
+
+更新套件庫
+# apt-get update
+
+安裝編譯需要的工具和函式庫
+# apt-get install build-essential
+# apt-get install libtool
+
+切換目錄，待會兒下載的tar.gz都會放在這裡
+# cd /usr/local/src
+
+下載zlib、pcre、openssl原始碼的tar.gz包，然後解壓縮
+# wget http://zlib.net/zlib-1.2.8.tar.gz
+# tar -zxvf zlib-1.2.8.tar.gz
+
+# wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.36.tar.gz
+# tar -zxvf pcre-8.36.tar.gz
+
+# wget https://www.openssl.org/source/openssl-1.0.1j.tar.gz
+# tar -zxvf openssl-1.0.1j.tar.gz
+
+下載nginx的原始碼tar.gz，解壓縮之後，進入nginx-1.6.2目錄
+# wget http://nginx.org/download/nginx-1.6.2.tar.gz
+# tar -zxvf nginx-1.6.2.tar.gz
+# cd nginx-1.6.2
+
+查看一下有什麼configure options
+# ./configure --help
+
+然後./configure
+# ./configure --prefix=/usr/local/nginx-1.6.2 \
+--user=www-data \
+--group=www-data \
+--with-http_ssl_module \
+--with-pcre=/usr/local/src/pcre-8.36 \
+--with-zlib=/usr/local/src/zlib-1.2.8 \
+--with-openssl=/usr/local/src/openssl-1.0.1j
+
+如果沒有問題，終端機會像這樣回應
+Configuration summary
+  + using PCRE library: /usr/local/src/pcre-8.36
+  + using OpenSSL library: /usr/local/src/openssl-1.0.1j
+  + md5: using OpenSSL library
+  + sha1: using OpenSSL library
+  + using zlib library: /usr/local/src/zlib-1.2.8
+
+  nginx path prefix: "/usr/local/nginx-1.6.2"
+  nginx binary file: "/usr/local/nginx-1.6.2/sbin/nginx"
+  nginx configuration prefix: "/usr/local/nginx-1.6.2/conf"
+  nginx configuration file: "/usr/local/nginx-1.6.2/conf/nginx.conf"
+  nginx pid file: "/usr/local/nginx-1.6.2/logs/nginx.pid"
+  nginx error log file: "/usr/local/nginx-1.6.2/logs/error.log"
+  nginx http access log file: "/usr/local/nginx-1.6.2/logs/access.log"
+  nginx http client request body temporary files: "client_body_temp"
+  nginx http proxy temporary files: "proxy_temp"
+  nginx http fastcgi temporary files: "fastcgi_temp"
+  nginx http uwsgi temporary files: "uwsgi_temp"
+  nginx http scgi temporary files: "scgi_temp"
+
+編譯
+# make
+
+安裝
+# make install
+
+這樣就把nginx安裝到/usr/local/nginx-1.6.2目錄了
+可是在Cubian x1上面安裝nginx，我發現了一件讓我吐血的事
+# cd /usr/local/nginx-1.6.2
+# ls -al
+
+終端機打印了
+總計 24
+drwxr-sr-x  6 root staff 4096 11月 22 00:26 .
+drwxrwsr-x 11 root staff 4096 11月 22 01:04 ..
+drwxr-sr-x  2 root staff 4096 11月 22 00:26 conf
+drwxr-sr-x  2 root staff 4096 11月 22 00:26 html
+drwxr-sr-x  2 root staff 4096 11月 22 00:26 logs
+drwxr-sr-x  2 root staff 4096 11月 22 00:26 sbin
+
+所有的目錄還有裡面裝的檔案，他們的群組都變成了staff
+然後多了一個s的權限（我不再列出，你自已切進去執行ls -al自已瞧瞧）
+我老實說好了
+我根本不知道那個s的權限是幹什麼吃的
+我想要的權限很簡單，就是
+所有在/usr/local/nginx-1.6.2相關的檔案和目錄
+擁有人都是root，然後群組都是www-data
+沒有什麼（苟庇）s權限，檔案或是目錄的owner和同一個group都至少會有rw的權限
+基於這樣的邏輯，我再執行了下列指令，修改權限
+# cd /usr/local/
+# chmod -R g-s ./nginx-1.6.2
+# chmod -R g+w ./nginx-1.6.2
+# chown -R root:www-data ./nginx-1.6.2
+
+最後作一個Symbolic Link
+# cd /usr/local/
+# ln -s nginx-1.6.2 nginx
+
+在啟動nginx之前，先給它搞一個啟動腳本，也就是init script
+參考資料：
+http://kbeezie.com/debian-ubuntu-nginx-init-script/
+
+把下面的內容，另存成 /etc/init.d/nginx
+
+#! /bin/sh
+ 
+### BEGIN INIT INFO
+# Provides:          nginx
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts the nginx web server
+# Description:       starts nginx using start-stop-daemon
+### END INIT INFO
+ 
+PATH=/opt/bin:/opt/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/local/nginx/sbin/nginx
+NAME=nginx
+DESC=nginx
+ 
+test -x $DAEMON || exit 0
+ 
+# Include nginx defaults if available
+if [ -f /etc/default/nginx ] ; then
+        . /etc/default/nginx
+fi
+ 
+set -e
+ 
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        start-stop-daemon --start --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
+                --exec $DAEMON -- $DAEMON_OPTS
+        echo "$NAME."
+        ;;
+  stop)
+        echo -n "Stopping $DESC: "
+        start-stop-daemon --stop --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
+                --exec $DAEMON
+        echo "$NAME."
+        ;;
+  restart|force-reload)
+        echo -n "Restarting $DESC: "
+        start-stop-daemon --stop --quiet --pidfile \
+                /usr/local/nginx/logs/nginx.pid --exec $DAEMON
+        sleep 1
+        start-stop-daemon --start --quiet --pidfile \
+                /usr/local/nginx/logs/nginx.pid --exec $DAEMON -- $DAEMON_OPTS
+        echo "$NAME."
+        ;;
+  reload)
+      echo -n "Reloading $DESC configuration: "
+      start-stop-daemon --stop --signal HUP --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
+          --exec $DAEMON
+      echo "$NAME."
+      ;;
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+ 
+exit 0
+
+不要忘記它的擁有人和群組都是root，權限值是755
+# chown root:root /etc/init.d/nginx
+# chmod 755 /etc/init.d/nginx
+
+剛才搞了個啟動腳本/etc/init.d/nginx
+現在你可以用這樣的指令啟動nginx
+# service nginx start
+或是
+# /etc/init.d/nginx start
+兩個指令是同效的
+
+然後停止nginx就用
+# service nginx stop
+或是
+# /etc/init.d/nginx stop
+
+重新啟動就用
+# service nginx restart
+或是
+# /etc/init.d/nginx restart
+
+重新載入組態檔就用
+# service nginx reload
+或是
+# /etc/init.d/nginx reload
+
+不過上面的那個啟動腳本有個小小缺點
+你沒辦法執行
+# service nginx status
+或是
+# /etc/init.d/nginx status
+
+如果要查看nginx有沒有正常啟動
+就只能這樣下指令
+# ps aux | grep nginx
+
+然後終端機會打印
+root      9792  0.0  0.0   3728   616 ?        Ss   02:08   0:00 nginx: master process /usr/local/nginx/sbin/nginx
+www-data  9793  0.0  0.0   3868  1228 ?        S    02:08   0:00 nginx: worker process      
+root      9802  0.0  0.0   4028   764 pts/0    S+   02:13   0:00 grep nginx
+
+這就表示nginx已經啟動
+或是你也可以這樣下指令檢查
+# netstat -anp|grep nginx
+
+然後終端機會打印
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      9792/nginx      
+unix  3      [ ]         STREAM     CONNECTED     122327   9792/nginx          
+unix  3      [ ]         STREAM     CONNECTED     122326   9792/nginx 
+
+這樣也是表示nginx已經啟動
