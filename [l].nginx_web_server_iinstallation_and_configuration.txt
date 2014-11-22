@@ -3,6 +3,7 @@ l.安裝nginx服務器 + php-fpm
 需要完成的工作列表：
 1.安裝好nginx服務器，並設定成開機自動啟動的服務
 2.安裝好php-fpm，並設定成開機自動啟動的服務
+3.設定nginx.conf讓nginx服務器可以解釋*.php的檔案
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.安裝好nginx服務器，並設定成開機自動啟動的服務
@@ -259,4 +260,49 @@ http://192.168.0.162
 的首頁？
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.安裝好php-fpm，並設定成開機自動啟動的服務
+
+接下來要安裝php-fpm
+
+參考了php官網的文件
+http://php.net/manual/en/install.unix.nginx.php
+
+其他民間文件（這裡有示範/etc/init.d/php-fpm啟動腳本怎麼寫）
+http://www.howtoforge.com/how-to-build-php-5.5-php-fpm-and-fastcgi-with-ioncube-loader-zend-opcache-and-apcu-for-ispconfig3-debian-wheezy
+
+簡體中文文件
+http://www.nginx.cn/231.html
+
+先安裝依賴套件
+# apt-get install build-essential
+# apt-get install libfcgi-dev libfcgi0ldbl libjpeg62-dbg libmcrypt-dev libssl-dev libc-client2007e libc-client2007e-dev libxml2-dev
+
+接著我進入Cubian的mate圖形介面，到php官網，
+把php-5.5.19.tar.gz下載到/usr/local/src目錄裡
+連結在這裡
+http://php.net/downloads.php
+（我很想在終端機直接用wget就下載，可是不成功）
+
+切換到/usr/local/src目錄
+# cd /usr/local/src
+
+稍早前的openssl-1.0.1j要編譯後，然後安裝
+待會兒php的原始碼才有openssl的函式庫可以用
+# cd openssl-1.0.1j
+# ./config --prefix=/usr/local/openssl-1.0.1j
+# make
+# make test
+# make install
+
+接下來是php的安裝步驟
+解壓縮、切換目錄、組態、編譯、測試、安裝
+# tar zxvf php-5.5.19.tar.gz
+# cd php-5.5.19
+# ./configure --prefix=/usr/local/php-5.5.19 --enable-fpm --with-mysql --with-openssl=/usr/local/openssl-1.0.1j
+# make
+# make test
+# make install
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
 
