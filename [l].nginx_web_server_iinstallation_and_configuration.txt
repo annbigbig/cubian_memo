@@ -1,5 +1,12 @@
 l.安裝nginx服務器 + php-fpm
 
+需要完成的工作列表：
+1.安裝好nginx服務器，並設定成開機自動啟動的服務
+2.安裝好php-fpm，並設定成開機自動啟動的服務
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.安裝好nginx服務器，並設定成開機自動啟動的服務
+
 切換成root身分
 $ sudo -i
 
@@ -101,7 +108,7 @@ drwxr-sr-x  2 root staff 4096 11月 22 00:26 sbin
 
 在啟動nginx之前，先給它搞一個啟動腳本，也就是init script
 參考資料：
-http://kbeezie.com/debian-ubuntu-nginx-init-script/
+http://www.rackspace.com/knowledge_center/article/ubuntu-and-debian-adding-an-nginx-init-script
 
 把下面的內容，另存成 /etc/init.d/nginx
 
@@ -117,7 +124,7 @@ http://kbeezie.com/debian-ubuntu-nginx-init-script/
 # Description:       starts nginx using start-stop-daemon
 ### END INIT INFO
  
-PATH=/opt/bin:/opt/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/nginx/sbin/nginx
 NAME=nginx
 DESC=nginx
@@ -126,44 +133,49 @@ test -x $DAEMON || exit 0
  
 # Include nginx defaults if available
 if [ -f /etc/default/nginx ] ; then
-        . /etc/default/nginx
+    . /etc/default/nginx
 fi
  
 set -e
  
+. /lib/lsb/init-functions
+ 
 case "$1" in
   start)
-        echo -n "Starting $DESC: "
-        start-stop-daemon --start --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
-                --exec $DAEMON -- $DAEMON_OPTS
-        echo "$NAME."
-        ;;
+    echo -n "Starting $DESC: "
+    start-stop-daemon --start --quiet --pidfile /usr/local/nginx/logs/$NAME.pid \
+        --exec $DAEMON -- $DAEMON_OPTS || true
+    echo "$NAME."
+    ;;
   stop)
-        echo -n "Stopping $DESC: "
-        start-stop-daemon --stop --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
-                --exec $DAEMON
-        echo "$NAME."
-        ;;
+    echo -n "Stopping $DESC: "
+    start-stop-daemon --stop --quiet --pidfile /usr/local/nginx/logs/$NAME.pid \
+        --exec $DAEMON || true
+    echo "$NAME."
+    ;;
   restart|force-reload)
-        echo -n "Restarting $DESC: "
-        start-stop-daemon --stop --quiet --pidfile \
-                /usr/local/nginx/logs/nginx.pid --exec $DAEMON
-        sleep 1
-        start-stop-daemon --start --quiet --pidfile \
-                /usr/local/nginx/logs/nginx.pid --exec $DAEMON -- $DAEMON_OPTS
-        echo "$NAME."
-        ;;
+    echo -n "Restarting $DESC: "
+    start-stop-daemon --stop --quiet --pidfile \
+        /usr/local/nginx/logs/$NAME.pid --exec $DAEMON || true
+    sleep 1
+    start-stop-daemon --start --quiet --pidfile \
+        /usr/local/nginx/logs/$NAME.pid --exec $DAEMON -- $DAEMON_OPTS || true
+    echo "$NAME."
+    ;;
   reload)
       echo -n "Reloading $DESC configuration: "
-      start-stop-daemon --stop --signal HUP --quiet --pidfile /usr/local/nginx/logs/nginx.pid \
-          --exec $DAEMON
+      start-stop-daemon --stop --signal HUP --quiet --pidfile /usr/local/nginx/logs/$NAME.pid \
+          --exec $DAEMON || true
       echo "$NAME."
       ;;
+  status)
+      status_of_proc -p /usr/local/nginx/logs/$NAME.pid "$DAEMON" nginx && exit 0 || exit $?
+      ;;
   *)
-        N=/etc/init.d/$NAME
-        echo "Usage: $N {start|stop|restart|force-reload}" >&2
-        exit 1
-        ;;
+    N=/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|restart|reload|force-reload|status}" >&2
+    exit 1
+    ;;
 esac
  
 exit 0
@@ -194,14 +206,13 @@ exit 0
 或是
 # /etc/init.d/nginx reload
 
-不過上面的那個啟動腳本有個小小缺點
-你沒辦法執行
+如果要看現在nginx的啟動狀態，就執行
 # service nginx status
 或是
 # /etc/init.d/nginx status
 
 如果要查看nginx有沒有正常啟動
-就只能這樣下指令
+還可以這樣下指令
 # ps aux | grep nginx
 
 然後終端機會打印
@@ -219,3 +230,33 @@ unix  3      [ ]         STREAM     CONNECTED     122327   9792/nginx
 unix  3      [ ]         STREAM     CONNECTED     122326   9792/nginx 
 
 這樣也是表示nginx已經啟動
+
+有了init script啟動腳本（/etc/init.d/nginx）
+接下來要設定開機的時候自動啟動nginx服務（第一次執行update-rc.d指令）
+# update-rc.d -f nginx defaults
+
+順便一提如果要讓nginx取消開機自動執行，指令是： 
+# update-rc.d -f nginx disable
+
+然後再打開就是
+# update-rc.d -f nginx enable
+
+重新開機之後，執行
+# netstat -anp | grep nginx
+
+終端機打印了
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      4265/nginx      
+unix  3      [ ]         STREAM     CONNECTED     5111     4265/nginx          
+unix  3      [ ]         STREAM     CONNECTED     5110     4265/nginx     
+
+耶，這樣就完成了第一個工作
+可以到筆記型電腦上，打開Firefox或是Chrome瀏覽器
+然後在網址列輸入Cubian服務器的IP地址：
+http://192.168.0.162
+
+看看有沒有看到nginx server預設放置在
+/usr/local/nginx/html/index.html
+的首頁？
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
