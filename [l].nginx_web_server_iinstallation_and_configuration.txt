@@ -507,8 +507,46 @@ unix  3      [ ]         STREAM     CONNECTED     3598     2315/php-fpm.conf)
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 3.設定nginx.conf讓nginx服務器可以解釋*.php的檔案
 
+在網站根目錄裡面產生index.php，內容是phpinfo()函式的打印結果
+# echo "<?php phpinfo(); ?>" >> /usr/local/nginx/html/index.php
+
 修改nginx.conf
 # vi /usr/local/nginx/conf/nginx.conf
 
+有兩個區塊需要修改，一個是網站的根目錄請改成這樣
+第一順位會採用網站根目錄下的index.php當作網站的首頁
+        location / {
+            root   html;
+            index  index.php index.html index.htm;
+        }
 
+然後緊接著上一個區塊，再加入一個區塊來解釋副檔名是.php的檔案
+        location ~* \.php$ {
+             fastcgi_index   index.php;
+             fastcgi_pass    127.0.0.1:9000;
+             include         fastcgi_params;
+             fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+             fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+        }
 
+改好就存檔，離開vi文字編輯器
+可以使用以下的指令來檢查剛才修改後的nginx.conf組態檔文法是否正確？執行
+# cd /usr/local/nginx/
+# sbin/nginx -t -c conf/nginx.conf
+
+如果你的nginx.conf文法是正確的，那麼終端機會輸出這樣的訊息
+nginx: the configuration file /usr/local/nginx-1.6.2/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is successful
+（如果輸出訊息不是上面這樣，那怎麼辦？還用問？當然是找出你剛才改的那個區塊，看看有沒有打錯什麼？打錯了字或是多打少打大括號之類的…）
+
+檢查過nginx.conf沒有問題，就重新啟動nginx服務，讓剛才的設定值生效
+# service nginx restart
+
+接著一樣到筆記型電腦上，打開Firefox或是Chrome瀏覽器，在網址列輸入Cubian服務器的IP地址
+http://192.168.0.162
+
+這時候你應該就會看到phpinfo()函式所產生的index.php頁面了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+打完收工
