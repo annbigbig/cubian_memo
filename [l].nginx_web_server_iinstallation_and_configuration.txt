@@ -373,10 +373,20 @@ Installing PDO headers:          /usr/local/php-5.5.19/include/php/ext/pdo/
 # ln -s php-5.5.19 php
 
 複製這些檔案到它們該去的地方
+# cp /usr/local/src/php-5.5.19/php.ini-development /usr/local/php/lib/php.ini
 # cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
 # cp /usr/local/php/sbin/php-fpm /usr/local/sbin
 
-修改php-fpm.conf
+修改php.ini
+# vi /usr/local/php/lib/php.ini
+
+把這一行
+;cgi.fix_pathinfo=1
+改成這樣
+cgi.fix_pathinfo=0
+然後存檔離開vi文字編輯器
+
+接著修改php-fpm.conf
 # vi /usr/local/php/etc/php-fpm.conf
 
 把user和group都改成www-data
