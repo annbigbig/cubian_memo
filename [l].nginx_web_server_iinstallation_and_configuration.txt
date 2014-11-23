@@ -434,7 +434,7 @@ root     31606  0.0  0.0   4028   764 pts/0    S+   16:28   0:00 grep php-fpm
 把預設的關於pid的這一行
 [global]
 ; Pid file
-; Note: the default prefix is /usr/local/var
+; Note: the default prefix is /usr/local/php-5.5.19/var
 ; Default Value: none
 ;pid = run/php-fpm.pid
 
