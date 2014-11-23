@@ -260,6 +260,8 @@ http://192.168.0.162
 的首頁？
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
 2.安裝好php-fpm，並設定成開機自動啟動的服務
 
 接下來要安裝php-fpm
@@ -296,13 +298,207 @@ http://php.net/downloads.php
 
 接下來是php的安裝步驟
 解壓縮、切換目錄、組態、編譯、測試、安裝
+# cd /usr/local/src
 # tar zxvf php-5.5.19.tar.gz
 # cd php-5.5.19
 # ./configure --prefix=/usr/local/php-5.5.19 --enable-fpm --with-mysql --with-openssl=/usr/local/openssl-1.0.1j
+
+這是configure成功之後的最後一小段輸出
++--------------------------------------------------------------------+
+| License:                                                           |
+| This software is subject to the PHP License, available in this     |
+| distribution in the file LICENSE.  By continuing this installation |
+| process, you are bound by the terms of this license agreement.     |
+| If you do not agree with the terms of this license, you must abort |
+| the installation process at this point.                            |
++--------------------------------------------------------------------+
+
+Thank you for using PHP.
+
+config.status: creating php5.spec
+config.status: creating main/build-defs.h
+config.status: creating scripts/phpize
+config.status: creating scripts/man1/phpize.1
+config.status: creating scripts/php-config
+config.status: creating scripts/man1/php-config.1
+config.status: creating sapi/cli/php.1
+config.status: creating sapi/fpm/php-fpm.conf
+config.status: creating sapi/fpm/init.d.php-fpm
+config.status: creating sapi/fpm/php-fpm.service
+config.status: creating sapi/fpm/php-fpm.8
+config.status: creating sapi/fpm/status.html
+config.status: creating sapi/cgi/php-cgi.1
+config.status: creating ext/phar/phar.1
+config.status: creating ext/phar/phar.phar.1
+config.status: creating main/php_config.h
+config.status: executing default commands
+
+編譯、測試、安裝
 # make
 # make test
 # make install
 
+執行make install安裝時終端機的輸出
+Installing shared extensions:     /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/
+Installing PHP CLI binary:        /usr/local/php-5.5.19/bin/
+Installing PHP CLI man page:      /usr/local/php-5.5.19/php/man/man1/
+Installing PHP FPM binary:        /usr/local/php-5.5.19/sbin/
+Installing PHP FPM config:        /usr/local/php-5.5.19/etc/
+Installing PHP FPM man page:      /usr/local/php-5.5.19/php/man/man8/
+Installing PHP FPM status page:      /usr/local/php-5.5.19/php/fpm/
+Installing PHP CGI binary:        /usr/local/php-5.5.19/bin/
+Installing PHP CGI man page:      /usr/local/php-5.5.19/php/man/man1/
+Installing build environment:     /usr/local/php-5.5.19/lib/php/build/
+Installing header files:          /usr/local/php-5.5.19/include/php/
+Installing helper programs:       /usr/local/php-5.5.19/bin/
+  program: phpize
+  program: php-config
+Installing man pages:             /usr/local/php-5.5.19/php/man/man1/
+  page: phpize.1
+  page: php-config.1
+Installing PEAR environment:      /usr/local/php-5.5.19/lib/php/
+[PEAR] Archive_Tar    - installed: 1.3.12
+[PEAR] Console_Getopt - installed: 1.3.1
+[PEAR] Structures_Graph- installed: 1.0.4
+[PEAR] XML_Util       - installed: 1.2.3
+[PEAR] PEAR           - installed: 1.9.5
+Wrote PEAR system config file at: /usr/local/php-5.5.19/etc/pear.conf
+You may want to add: /usr/local/php-5.5.19/lib/php to your php.ini include_path
+/usr/local/src/php-5.5.19/build/shtool install -c ext/phar/phar.phar /usr/local/php-5.5.19/bin
+ln -s -f /usr/local/php-5.5.19/bin/phar.phar /usr/local/php-5.5.19/bin/phar
+Installing PDO headers:          /usr/local/php-5.5.19/include/php/ext/pdo/
+
+回到/usr/local目錄，建立一個Symbolic Link指到php-5.5.19目錄
+# cd /usr/local
+# ln -s php-5.5.19 php
+
+複製這些檔案到它們該去的地方
+# cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
+# cp /usr/local/php/sbin/php-fpm /usr/local/sbin
+
+修改php-fpm.conf
+# vi /usr/local/php/etc/php-fpm.conf
+
+把user和group都改成www-data
+user = www-data
+group = www-data
+改好就存檔，離開vi文字編輯器
+
+現在可以啟動php-fpm了
+執行前再一次確認我是執行那個路徑的php-fpm
+# which php-fpm
+
+終端機打印了
+/usr/local/sbin/php-fpm
+
+執行吧啦嘿
+# php-fpm
+
+然後看一下是不是真的執行了？
+# ps aux |grep php-fpm
+
+終端機打印了
+root     16161  0.0  0.1  15892  2480 ?        Ss   16:01   0:00 php-fpm: master process (/usr/local/php-5.5.19/etc/php-fpm.conf)
+www-data 16170  0.0  0.1  15892  2104 ?        S    16:01   0:00 php-fpm: pool www
+www-data 16171  0.0  0.1  15892  2104 ?        S    16:01   0:00 php-fpm: pool www
+root     17910  0.0  0.0   4032   772 pts/0    S+   16:01   0:00 grep php-fpm
+
+這樣就確認php-fpm真的啟動了，然後先結束掉php-fpm程序
+殺掉master process，後面的16170和16171都會自動關閉掉
+# kill 16161
+
+再看一下有沒有清除乾淨？
+# ps aux |grep php-fpm
+
+終端機打印了
+root     31606  0.0  0.0   4028   764 pts/0    S+   16:28   0:00 grep php-fpm
+
+很好，這樣就恢復到沒有執行php-fpm之前的狀態
+現在要給php-fpm作一個init script
+# cp /usr/local/src/php-5.5.19/sapi/fpm/init.d.php-fpm.in /etc/init.d/php-fpm
+# chmod 755 /etc/init.d/php-fpm
+
+再次修改php-fpm.conf
+# vi /usr/local/php/etc/php-fpm.conf
+
+把預設的關於pid的這一行
+[global]
+; Pid file
+; Note: the default prefix is /usr/local/var
+; Default Value: none
+;pid = run/php-fpm.pid
+
+變成這樣
+pid = run/php-fpm.pid
+
+然後存檔，離開
+
+接著修改/etc/init.d/php-fpm
+# vi /etc/init.d/php-fpm
+
+只要改這5行
+#prefix=@prefix@
+#exec_prefix=@exec_prefix@
+
+php_fpm_BIN=/usr/local/sbin/php-fpm
+php_fpm_CONF=/usr/local/php/etc/php-fpm.conf
+php_fpm_PID=/usr/local/php/var/run/php-fpm.pid
+改完存檔，離開
+
+現在可以使用下列指令了，耶比
+
+啟動php
+# /etc/init.d/php-fpm start
+
+停止php
+# /etc/init.d/php-fpm stop
+
+重新啟動php
+# /etc/init.d/php-fpm restart
+
+查看php服務的狀態
+# /etc/init.d/php-fpm status
+
+也可以這樣下指令，意義是一樣的
+啟動php
+# service php-fpm start
+
+停止php
+# service php-fpm stop
+
+重新啟動php
+# service php-fpm restart
+
+查看php服務的狀態
+# service php-fpm status
+
+最後是要設定成開機自動啟動php服務
+# update-rc.d php-fpm defaults
+
+接著重新開機之後，執行下面的指令，看看php-fpm有沒有變成開機自動啟動的服務
+# ps aux | grep php-fpm
+
+終端機打印了
+root      2315  0.0  0.1  13584  2480 ?        Ss   16:57   0:00 php-fpm: master process (/usr/local/php/etc/php-fpm.conf)                                                                
+www-data  2321  0.0  0.1  13584  2100 ?        S    16:57   0:00 php-fpm: pool www                                                                                                        
+www-data  2322  0.0  0.1  13584  2104 ?        S    16:57   0:00 php-fpm: pool www                                                                                                        
+root      5645  0.0  0.0   4032   772 pts/0    S+   16:58   0:00 grep php-fpm
+
+或是這樣檢查
+# netstat -anp | grep php-fpm
+
+終端機打印了
+tcp        0      0 127.0.0.1:9000          0.0.0.0:*               LISTEN      2315/php-fpm.conf)
+unix  3      [ ]         STREAM     CONNECTED     3599     2315/php-fpm.conf)  
+unix  3      [ ]         STREAM     CONNECTED     3598     2315/php-fpm.conf)
+
+恭喜你，這樣就完成了開機之後自動執行php-fpm服務
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.設定nginx.conf讓nginx服務器可以解釋*.php的檔案
+
+修改nginx.conf
+# vi /usr/local/nginx/conf/nginx.conf
+
 
 
