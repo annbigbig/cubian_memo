@@ -319,6 +319,7 @@ http://php.net/downloads.php
 # cd php-5.5.19
 # ./configure --prefix=/usr/local/php-5.5.19 \
 --enable-fpm \
+--enable-zip \
 --with-mysql \
 --with-openssl=/usr/local/openssl-1.0.1j \
 --with-mcrypt=/usr/local/mcrypt-2.6.8

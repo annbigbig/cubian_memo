@@ -7,7 +7,11 @@ http://laravel.com/docs/4.2/installation
 
 1.安裝composer
 2.安裝Laravel Installer
-3.
+3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/gituser01/website目錄
+（甲）使用Lavavel Installer
+（乙）使用composer指令
+（丙）直接下載Laravel
+4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann.big的虛擬主機
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.安裝composer
@@ -51,13 +55,46 @@ PHP 5.5.19 (cli) (built: Nov 23 2014 14:50:42)
 Copyright (c) 1997-2014 The PHP Group
 Zend Engine v2.5.0, Copyright (c) 1998-2014 Zend Technologies
 
+看到上面寫的5.5.19，這是稍早前我安裝的版本沒錯
 還有我想看我的php有支援什麼模組，執行
 # php -m
 
 終端機打印了
-@@@@@@@@結果待會放上@@@@@@@@
+[PHP Modules]
+Core
+ctype
+date
+dom
+ereg
+fileinfo
+filter
+hash
+iconv
+json
+libxml
+mcrypt
+mysql
+mysqlnd
+openssl
+pcre
+PDO
+pdo_sqlite
+Phar
+posix
+Reflection
+session
+SimpleXML
+SPL
+sqlite3
+standard
+tokenizer
+xml
+xmlreader
+xmlwriter
+zip
 
-看到上面寫的5.5.19，這是稍早前我安裝的版本沒錯
+[Zend Modules]
+
 現在來下載composer
 # cd /tmp
 # curl -sS https://getcomposer.org/installer | php
@@ -123,11 +160,39 @@ Writing lock file
 Generating autoload files
 
 結果我再
-root@cubie:/tmp# ls
-gcin-cubie  ssh-vf2aKvaNAZ3n  x11vnc.log
+root@cubie:/tmp# ls -al
+總計 16
+drwxrwxrwt  6 root  root   160 11月 25 23:02 .
+drwxr-xr-x 24 root  root  4096 11月 25 22:34 ..
+drwx------  2 cubie cubie   60 11月 25 22:57 gcin-cubie
+drwxrwxrwt  2 root  root    60 11月 25 22:57 .ICE-unix
+drwx------  2 cubie cubie   60 11月 25 22:57 ssh-bMbzSGcdmtVg
+-r--r--r--  1 root  root    11 11月 25 22:57 .X0-lock
+drwxrwxrwt  2 root  root    60 11月 25 22:57 .X11-unix
+-rw-r--r--  1 root  root  4800 11月 25 22:57 x11vnc.log
+root@cubie:/tmp#
 
 剛才的composer指令並沒有在/tmp目錄裡安裝什麼東西
 但是它有安裝東西在/root/.composer目錄
+官網的教程指出
+經過剛才以root身分執行的
+# composer global require "laravel/installer=~1.1"
+這個指令之後，所謂的Laravel Installer
+就會安裝在
+/root/.composer/vendor/bin/laravel
+這個檔案就是Laravel Installer
+你應該把/root/.composer/vendor/bin
+加到/root/.bashrc
+# vi ~/.bashrc
 
+在檔案最後的地方，加上這三行
+# This is for laravel 4
+PATH=$PATH:~/.composer/vendor/bin
+export PATH
+
+下一次你登入為root用戶的時候
+就可以使用
+# laravel new app-name
+這樣的指令，來產生一個新的Laravel應用程式了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
