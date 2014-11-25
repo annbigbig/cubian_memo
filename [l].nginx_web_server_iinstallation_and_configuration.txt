@@ -296,12 +296,32 @@ http://php.net/downloads.php
 # make test
 # make install
 
+另外有一個mcrypt的模組稍後也要編進php
+所以這裡要先把mcrypt的函式庫編譯並安裝上
+我一樣是在Cubian的mate圖形介面裡，
+把mcrypt-2.6.8.tar.gz先下載到了/usr/local/src目錄裡
+先安裝libmhash函式庫，這個用apt套件庫裡的就行了
+# apt-get install libmhash*
+
+然後就
+# cd /usr/local/src
+# tar zxvf mcrypt-2.6.8.tar.gz
+# cd mcrypt-2.6.8
+# ./configure --prefix=/usr/local/mcrypt-2.6.8 --disable-posix-threads
+# make
+# make check
+# make install
+
 接下來是php的安裝步驟
 解壓縮、切換目錄、組態、編譯、測試、安裝
 # cd /usr/local/src
 # tar zxvf php-5.5.19.tar.gz
 # cd php-5.5.19
-# ./configure --prefix=/usr/local/php-5.5.19 --enable-fpm --with-mysql --with-openssl=/usr/local/openssl-1.0.1j
+# ./configure --prefix=/usr/local/php-5.5.19 \
+--enable-fpm \
+--with-mysql \
+--with-openssl=/usr/local/openssl-1.0.1j \
+--with-mcrypt=/usr/local/mcrypt-2.6.8
 
 這是configure成功之後的最後一小段輸出
 +--------------------------------------------------------------------+
