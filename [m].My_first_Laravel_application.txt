@@ -228,7 +228,7 @@ drwxrwxr-x 2 sftpuser01 sftpuser01 4096 11月 17 21:50 website
 切換到這個目錄裡
 # cd /home/sftpuser01
 
-現在把Laravel Framework需要的東西都弄到這個目錄裡
+現在把Laravel Framework需要的東西都弄到testapp1這個子目錄裡
 執行
 # laravel new testapp1
 
@@ -265,24 +265,128 @@ drwxr-xr-x 20 root root  4096 11月 26 16:58 vendor
 
 最後不要忘記把testapp1目錄裡的所有檔案和子目錄的擁有人及群組還有權限值改一下
 # chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp1
-# chmod -R 755 /home/sftpuser01/testapp1
+# chmod -R g+w /home/sftpuser01/testapp1
 
 官網說:
 Laravel may require one set of permissions to be configured: 
 folders within app/storage require write access by the web server.
-（Laravel需要設定這一組權限，在app/storage裡面的目錄web server必需要有寫入的權限）
+（Laravel需要設定這一組權限，在app/storage裡面的目錄，web server必需要有寫入的權限）
 
 如果你是照著我的Cubian memo筆記
 一路作到這裡
 其實不用刻意再為Laravel的這個規定，再去作什麼額外的設定
 因為稍早之前，我已經把www-data用戶加到sftpuser01用戶的群組裡了
-
-所以
+這樣就完成了Laravel Framework開發所需要的依賴套件安裝
+使用
+# laravel new app-name
+來產生一個開發Laravel應用程式所需要的完整目錄
+是最常被使用的方式
 
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 （乙）使用composer指令
+
+
+
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 （丙）直接下載Laravel
+
+
+
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann.big的虛擬主機
+
+修改nginx.conf
+# vi /usr/local/nginx/conf/nginx.conf
+
+加入以下區塊
+# testing virtual host - www.cubian.ann01.big
+    server {
+      server_name www.cubian.ann01.big;
+      listen 80;
+      root /home/sftpuser01/testapp1/public;
+      access_log  logs/ann01.access.log combined;
+      error_log   logs/ann01.error.log;
+
+      location / {
+         index index.php index.html index.htm;
+      }
+
+       # follow the PHP official website's instructions
+      location ~* \.php$ {
+           fastcgi_index   index.php;
+           fastcgi_pass    127.0.0.1:9000;
+           include         fastcgi_params;
+           fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+           fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+      }
+    }
+
+改好就離開vi文字編輯器
+測試一下剛才改的nginx.conf有沒有文法錯誤？執行
+# cd /usr/local/nginx
+# sbin/nginx -t -c conf/nginx.conf
+
+如果語法是正確的，終端機會輸出
+nginx: the configuration file /usr/local/nginx-1.6.2/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is successful
+
+然後就重新啟動nginx服務器
+# service nginx restart
+
+然後看一下現在是否nginx服務有正常啟動？
+# service nginx status
+
+也可以這樣看
+# ps aux | grep nginx
+
+或是這樣看
+# netstat -anp | grep nginx
+
+工作機（HTTP client）這邊要修改/etc/hosts
+因為
+www.cubian.ann01.big
+這個域名是我們臨時唬爛的，它不存在於地球上任何DNS Server裡的任何記錄，
+它只會存在於我們家的區網測試環境內
+在工作機（我的筆記型電腦）上登入為root用戶
+然後執行
+# vi /etc/hosts
+
+這裡直接給出我的/etc/hosts內容
+127.0.0.1	localhost
+127.0.1.1	anntony-Lenovo-B590
+192.168.0.166   banana banana2.com
+192.168.0.162   cubie tonycha.com www.cubian.ann01.big
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+可以看到192.168.0.162被叫成好幾個名字
+不管怎麼叫，它就是我房間裡的cubieboard3代
+其中一個名字會是www.cubian.ann01.big
+這樣在筆記型電腦上，打開Firefox或Chrome瀏覽器
+然後在網址列輸入
+http://www.cubian.ann01.big
+的時候
+我們會從這台筆記型電腦，發出一個Host Header為www.cubian.ann01.big的HTTP Request
+時間很多的話可以參考這裡
+http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+14.23 節 Host 的部分
+然後在nginx服務器那邊
+它會用上面我們設定的
+server_name www.cubian.ann01.big;
+這個區塊的虛擬主機的設定，來滿足這個HTTP Request
+簡單的說
+在工作機上的瀏覽器網址列輸入
+http://www.cubian.ann01.big
+就會看到放在Cubian服務器上
+以 
+/home/sftpuser01/testapp1/public
+為網站根目錄的首頁
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
