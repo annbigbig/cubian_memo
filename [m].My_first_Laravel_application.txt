@@ -7,7 +7,7 @@ http://laravel.com/docs/4.2/installation
 
 1.安裝composer
 2.安裝Laravel Installer
-3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/gituser01/website目錄
+3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01目錄
 （甲）使用Lavavel Installer
 （乙）使用composer指令
 （丙）直接下載Laravel
@@ -194,5 +194,95 @@ export PATH
 就可以使用
 # laravel new app-name
 這樣的指令，來產生一個新的Laravel應用程式了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01/website目錄
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+（甲）使用Lavavel Installer
+
+確認你現在是root用戶身分
+（因為剛才是安裝Laravel Install在/root/.composer/vendor/bin/laravel）
+# whoami
+
+終端機打印了
+root
+
+確認一下laravel執行檔的路徑
+# which laravel
+
+終端機打印了
+/root/.composer/vendor/bin/laravel
+（這是因為我們稍早前在/root/.bashrc的配置，在步驟2，記得嗎？）
+
+接著查看一下/home/sftpuser01目錄
+# ls -al /home/sftpuser01
+
+終端機打印了
+總計 20
+drwxr-xr-x 4 root       root       4096 11月 17 22:11 .
+drwxr-xr-x 6 root       root       4096 11月 21 03:05 ..
+drwxrwxr-x 3 sftpuser01 sftpuser01 4096 11月 21 03:41 data-store
+-rw------- 1 sftpuser01 sftpuser01 1679 11月 17 22:05 id_rsa
+drwxrwxr-x 2 sftpuser01 sftpuser01 4096 11月 17 21:50 website
+
+切換到這個目錄裡
+# cd /home/sftpuser01
+
+現在把Laravel Framework需要的東西都弄到這個目錄裡
+執行
+# laravel new testapp1
+
+終端機打印了
+Crafting application...
+Application ready! Build something amazing.
+
+因為剛才的指令，產生了一個testapp1的目錄
+# ls -al | grep testapp1
+
+終端機打印了
+drwxr-xr-x 6 root       root       4096 11月 26 16:58 testapp1
+
+testapp1這個目錄裡面已經塞滿了你撰寫Laravel應用程式所需的一切東西
+# ls -al /home/sftpuser01/testapp1
+
+終端機打印了
+總計 116
+drwxr-xr-x  6 root root  4096 11月 26 16:58 .
+drwxr-xr-x  5 root root  4096 11月 26 16:58 ..
+drwxr-xr-x 12 root root  4096 11月 26 16:58 app
+-rw-r--r--  1 root root  2452 11月 26 16:58 artisan
+drwxr-xr-x  2 root root  4096 11月 26 16:58 bootstrap
+-rw-r--r--  1 root root   717 11月 26 16:58 composer.json
+-rw-r--r--  1 root root 58488 11月 26 16:58 composer.lock
+-rw-r--r--  1 root root   146 11月 26 16:58 CONTRIBUTING.md
+-rw-r--r--  1 root root    12 11月 26 16:58 .gitattributes
+-rw-r--r--  1 root root   100 11月 26 16:58 .gitignore
+-rw-r--r--  1 root root   567 11月 26 16:58 phpunit.xml
+drwxr-xr-x  3 root root  4096 11月 26 16:58 public
+-rw-r--r--  1 root root  2051 11月 26 16:58 readme.md
+-rw-r--r--  1 root root   519 11月 26 16:58 server.php
+drwxr-xr-x 20 root root  4096 11月 26 16:58 vendor
+
+最後不要忘記把testapp1目錄裡的所有檔案和子目錄的擁有人及群組還有權限值改一下
+# chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp1
+# chmod -R 755 /home/sftpuser01/testapp1
+
+官網說:
+Laravel may require one set of permissions to be configured: 
+folders within app/storage require write access by the web server.
+（Laravel需要設定這一組權限，在app/storage裡面的目錄web server必需要有寫入的權限）
+
+如果你是照著我的Cubian memo筆記
+一路作到這裡
+其實不用刻意再為Laravel的這個規定，再去作什麼額外的設定
+因為稍早之前，我已經把www-data用戶加到sftpuser01用戶的群組裡了
+
+所以
+
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+（乙）使用composer指令
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+（丙）直接下載Laravel
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
