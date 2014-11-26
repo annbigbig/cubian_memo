@@ -7,7 +7,7 @@ http://laravel.com/docs/4.2/installation
 
 1.安裝composer
 2.安裝Laravel Installer
-3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01目錄
+3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01目錄下的子目錄testappX
 （甲）使用Lavavel Installer
 （乙）使用composer指令
 （丙）直接下載Laravel
@@ -196,7 +196,7 @@ export PATH
 這樣的指令，來產生一個新的Laravel應用程式了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01/website目錄
+3.以下列任何一種方式，將Laravel Framework開發需要用的東西都安裝到/home/sftpuser01/website目錄下的子目錄testappX
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 （甲）使用Lavavel Installer
 
@@ -285,12 +285,22 @@ folders within app/storage require write access by the web server.
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 （乙）使用composer指令
 
-
+# composer create-project laravel/laravel /home/sftpuser01/testapp2
+# chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp2
+# chmod -R g+w /home/sftpuser01/testapp2
 
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
-（丙）直接下載Laravel
+（丙）直接下載Laravel 
+（不建議這麼作，因為步驟多，又不優，而且需要服務器事先安裝好git）
 
-
+# cd /home/sftpuser01
+# wget https://github.com/laravel/laravel/archive/master.zip
+# unzip master.zip
+# mv laravel-master testapp3
+# cd testapp3
+# composer install
+# chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp3
+# chmod -R g+w /home/sftpuser01/testapp3
 
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 
