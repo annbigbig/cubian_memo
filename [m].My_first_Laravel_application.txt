@@ -263,7 +263,7 @@ drwxr-xr-x  3 root root  4096 11月 26 16:58 public
 -rw-r--r--  1 root root   519 11月 26 16:58 server.php
 drwxr-xr-x 20 root root  4096 11月 26 16:58 vendor
 
-但是（甲）這個方法不會自動在app/config/app.php裡產生application key
+但是（甲）和（丙）這兩個方法不會自動在app/config/app.php裡產生application key
 你可以這樣看一下
 # cd /home/sftpuser01/testapp1/app/config
 # cat app.php | grep key
@@ -301,10 +301,8 @@ Application key [MU1eCZccaFmIPYAh3T6GDEG1Fzp1LFZV] set successfully.
 ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 我也不是很鳥，反正就是要設定好application key
 日後才能加密資料的樣子，所以我就照作了這樣
-為什麼只有在（甲）方式我才有主動去產生application key
-那是因為下面稍後會介紹的（乙）和（丙）的方式
-都會自動為Laravel Application產生key
-只有（甲）這個方式不會，所以你要自已再記得用上面的方式產生application key
+如果是使用（甲）或（丙）的方式建立Laravel應用程式目錄
+所以你要自已再記得用上面的方式產生application key
 
 最後不要忘記把testapp1目錄裡的所有檔案和子目錄的擁有人及群組還有權限值改一下
 # chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp1
@@ -342,6 +340,7 @@ folders within app/storage require write access by the web server.
 # mv laravel-master testapp3
 # cd testapp3
 # composer install
+# php artisan key:generate
 # chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp3
 # chmod -R g+w /home/sftpuser01/testapp3
 
