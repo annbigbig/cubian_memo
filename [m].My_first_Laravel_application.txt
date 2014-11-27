@@ -11,7 +11,7 @@ http://laravel.com/docs/4.2/installation
 （甲）使用Lavavel Installer
 （乙）使用composer指令
 （丙）直接下載Laravel
-4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann.big的虛擬主機
+4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann01.big的虛擬主機
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.安裝composer
@@ -263,6 +263,49 @@ drwxr-xr-x  3 root root  4096 11月 26 16:58 public
 -rw-r--r--  1 root root   519 11月 26 16:58 server.php
 drwxr-xr-x 20 root root  4096 11月 26 16:58 vendor
 
+但是（甲）這個方法不會自動在app/config/app.php裡產生application key
+你可以這樣看一下
+# cd /home/sftpuser01/testapp1/app/config
+# cat app.php | grep key
+
+終端機打印了
+	| This key is used by the Illuminate encrypter service and should be set
+	'key' => 'YourSecretKey!!!',
+
+所以我們要產生testapp1的application key
+這個動作只要作一次就好了
+執行
+# cd /home/sftpuser01/testapp1
+# php artisan key:generate
+
+終端機打印了
+Application key [MU1eCZccaFmIPYAh3T6GDEG1Fzp1LFZV] set successfully.
+
+然後我們再一次檢查application key
+# cd /home/sftpuser01/testapp1/app/config
+# cat app.php | grep key
+
+終端機打印了
+	| This key is used by the Illuminate encrypter service and should be set
+	'key' => 'MU1eCZccaFmIPYAh3T6GDEG1Fzp1LFZV',
+
+這樣就設定完成了application key
+為什麼我在這裡產生application key呢？這個application key是要幹什麼吃的呢？
+在Laravel中文官網
+
+其中解釋是：
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+備註: 一個在 app/config/app.php 的設置選項應該確保有設定 key 的選項，這個值應該設為32個字元的隨機字串，
+這個 key 將會被用來加密資料，除非 key 設定完成，否則您的加密資料都是不安全的，
+你可以透過 artisan 指令快速地建立此 key值 php artisan key:generate
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+我也不是很鳥，反正就是要設定好application key
+日後才能加密資料的樣子，所以我就照作了這樣
+為什麼只有在（甲）方式我才有主動去產生application key
+那是因為下面稍後會介紹的（乙）和（丙）的方式
+都會自動為Laravel Application產生key
+只有（甲）這個方式不會，所以你要自已再記得用上面的方式產生application key
+
 最後不要忘記把testapp1目錄裡的所有檔案和子目錄的擁有人及群組還有權限值改一下
 # chown -R sftpuser01:sftpuser01 /home/sftpuser01/testapp1
 # chmod -R g+w /home/sftpuser01/testapp1
@@ -305,7 +348,7 @@ folders within app/storage require write access by the web server.
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann.big的虛擬主機
+4.設定nginx服務器，增加一個服務主機名稱為www.cubian.ann01.big的虛擬主機
 
 修改nginx.conf
 # vi /usr/local/nginx/conf/nginx.conf
