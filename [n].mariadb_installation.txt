@@ -1,0 +1,67 @@
+n.安裝MariaDB
+
+需要完成的工作列表：
+1.安裝cmake
+2.安裝MariaDB
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.安裝cmake
+
+參考資料：
+http://www.cmake.org/install/
+
+登入為root身分之後
+# cd /usr/local/src
+# wget http://www.cmake.org/files/v3.0/cmake-3.0.2.tar.gz
+# tar zxvf ./cmake-3.0.2.tar.gz
+# cd cmake-3.0.2
+# ./bootstrap
+# make
+# ln -s /usr/local/src/cmake-3.0.2/bin/cmake /usr/local/sbin/cmake
+# ln -s /usr/local/src/cmake-3.0.2/bin/ctest /usr/local/sbin/ctest
+# ln -s /usr/local/src/cmake-3.0.2/bin/cpack /usr/local/sbin/cpack
+
+這樣就安裝好cmake了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.安裝MariaDB
+
+安裝依賴套件
+# apt-get install libncurses5-dev
+# apt-get install bison
+
+新增mysql用戶及mysql群組
+# groupadd -g 400 mysql
+# useradd -c "MySQL Server" -d /srv/mysql -g mysql -s /bin/false -u 400 mysql
+
+下載source tar ball
+# cd /usr/local/src
+# wget https://downloads.mariadb.org/interstitial/mariadb-10.0.15/source/mariadb-10.0.15.tar.gz
+
+安裝了，細節不解釋了
+# tar zxvf ./mariadb-10.0.15.tar.gz
+# cd mariadb-10.0.15
+# sed -i "s@data/test@\${INSTALL_MYSQLTESTDIR}@g" sql/CMakeLists.txt
+# sed -i "s/srv_buf_size/srv_sort_buf_size/" storage/innobase/row/row0log.cc
+# cmake -DCMAKE_BUILD_TYPE=Release                       \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb-10.0.15 \
+      -DINSTALL_DOCDIR=share/doc/mariadb-10.0.15       \
+      -DINSTALL_DOCREADMEDIR=share/doc/mariadb-10.0.15 \
+      -DINSTALL_MANDIR=share/man                       \
+      -DINSTALL_MYSQLSHAREDIR=share/mysql              \
+      -DINSTALL_MYSQLTESTDIR=share/mysql/test          \
+      -DINSTALL_PLUGINDIR=lib/mysql/plugin             \
+      -DINSTALL_SBINDIR=sbin                           \
+      -DINSTALL_SCRIPTDIR=bin                          \
+      -DINSTALL_SQLBENCHDIR=share/mysql/bench          \
+      -DINSTALL_SUPPORTFILESDIR=share/mysql            \
+      -DMYSQL_DATADIR=/srv/mysql                       \
+      -DMYSQL_UNIX_ADDR=/run/mysqld/mysqld.sock        \
+      -DWITH_EXTRA_CHARSETS=complex                    \
+      -DWITH_EMBEDDED_SERVER=ON                        \
+      -DTOKUDB_OK=0
+# make
+# make test
+# make install
+

@@ -25,3 +25,5 @@ k.接上我的750 GB SATA2硬碟，並使用/dev/sda1當成Cubian系統的rootfs
 l.安裝nginx服務器 + php-fpm
 
 m.我的第一個Laravel 4 application
+
+n.安裝MariaDB
