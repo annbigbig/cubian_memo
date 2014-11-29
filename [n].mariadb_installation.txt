@@ -3,7 +3,7 @@ n.安裝MariaDB
 需要完成的工作列表：
 1.安裝cmake
 2.安裝MariaDB
-
+3.為什麼最新的stable release是10.0.15，可是我在這裡卻安裝10.0.14？
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.安裝cmake
@@ -27,6 +27,9 @@ http://www.cmake.org/install/
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 2.安裝MariaDB
 
+參考資料：
+http://www.linuxfromscratch.org/blfs/view/svn/server/mariadb.html
+
 安裝依賴套件
 # apt-get install libncurses5-dev
 # apt-get install bison
@@ -35,19 +38,17 @@ http://www.cmake.org/install/
 # groupadd -g 400 mysql
 # useradd -c "MySQL Server" -d /srv/mysql -g mysql -s /bin/false -u 400 mysql
 
-下載source tar ball
-# cd /usr/local/src
-# wget https://downloads.mariadb.org/interstitial/mariadb-10.0.15/source/mariadb-10.0.15.tar.gz
-
 安裝了，細節不解釋了
-# tar zxvf ./mariadb-10.0.15.tar.gz
-# cd mariadb-10.0.15
+# cd /usr/local/src
+# wget ftp://mirrors.fe.up.pt/pub/mariadb/mariadb-10.0.14/source/mariadb-10.0.14.tar.gz
+# tar zxvf ./mariadb-10.0.14.tar.gz
+# cd mariadb-10.0.14
 # sed -i "s@data/test@\${INSTALL_MYSQLTESTDIR}@g" sql/CMakeLists.txt
 # sed -i "s/srv_buf_size/srv_sort_buf_size/" storage/innobase/row/row0log.cc
 # cmake -DCMAKE_BUILD_TYPE=Release                       \
-      -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb-10.0.15 \
-      -DINSTALL_DOCDIR=share/doc/mariadb-10.0.15       \
-      -DINSTALL_DOCREADMEDIR=share/doc/mariadb-10.0.15 \
+      -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb-10.0.14 \
+      -DINSTALL_DOCDIR=share/doc/mariadb-10.0.14       \
+      -DINSTALL_DOCREADMEDIR=share/doc/mariadb-10.0.14 \
       -DINSTALL_MANDIR=share/man                       \
       -DINSTALL_MYSQLSHAREDIR=share/mysql              \
       -DINSTALL_MYSQLTESTDIR=share/mysql/test          \
@@ -61,7 +62,114 @@ http://www.cmake.org/install/
       -DWITH_EXTRA_CHARSETS=complex                    \
       -DWITH_EMBEDDED_SERVER=ON                        \
       -DTOKUDB_OK=0
+
 # make
 # make test
 # make install
 
+安裝完成之後，設定一下目錄的權限值、擁有人及群組，然後作個Symbolic Link
+# cd /usr/local
+# chmod -R g-s ./mariadb-10.0.14
+# chmod -R g+w ./mariadb-10.0.14
+# chown -R mysql:mysql ./mariadb-10.0.14
+# ln -s mariadb-10.0.14 mariadb
+
+產生/etc/mysql目錄，並設定好權限
+# install -v -dm 755 /etc/mysql
+# chown root:root /etc/mysql
+
+產生my.cnf設定檔
+# touch /etc/mysql/my.cnf
+# vi /etc/mysql/my.cnf
+
+內容如下：
+# Begin /etc/mysql/my.cnf
+
+# The following options will be passed to all MySQL clients
+[client]
+#password       = your_password
+port            = 3306
+socket          = /run/mysqld/mysqld.sock
+
+# The MySQL server
+[mysqld]
+port            = 3306
+socket          = /run/mysqld/mysqld.sock
+datadir         = /srv/mysql
+skip-external-locking
+key_buffer_size = 16M
+max_allowed_packet = 1M
+sort_buffer_size = 512K
+net_buffer_length = 16K
+myisam_sort_buffer_size = 8M
+
+# Don't listen on a TCP/IP port at all.
+skip-networking
+
+# required unique id between 1 and 2^32 - 1
+server-id       = 1
+
+# Uncomment the following if you are using BDB tables
+#bdb_cache_size = 4M
+#bdb_max_lock = 10000
+
+# Uncomment the following if you are using InnoDB tables
+#innodb_data_home_dir = /srv/mysql
+#innodb_data_file_path = ibdata1:10M:autoextend
+#innodb_log_group_home_dir = /srv/mysql
+# You can set .._buffer_pool_size up to 50 - 80 %
+# of RAM but beware of setting memory usage too high
+#innodb_buffer_pool_size = 16M
+#innodb_additional_mem_pool_size = 2M
+# Set .._log_file_size to 25 % of buffer pool size
+#innodb_log_file_size = 5M
+#innodb_log_buffer_size = 8M
+#innodb_flush_log_at_trx_commit = 1
+#innodb_lock_wait_timeout = 50
+
+[mysqldump]
+quick
+max_allowed_packet = 16M
+
+[mysql]
+no-auto-rehash
+# Remove the next comment character if you are not familiar with SQL
+#safe-updates
+
+[isamchk]
+key_buffer = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[myisamchk]
+key_buffer_size = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[mysqlhotcopy]
+interactive-timeout
+
+# End /etc/mysql/my.cnf
+貼上，然後存檔離開vi文字編輯器
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.為什麼最新的stable release是10.0.15，可是我在這裡卻安裝10.0.14？
+
+原因是：最新的10.0.15版本編譯到44%的時候無法再繼續
+所以我只好改下載10.0.14版
+這是那個時候編譯失敗時所產生的訊息，還是保留下來作個紀念
+我試著以inuse_relaylog_atomic_lock當作關鍵字，用Google搜尋
+結果只出來了5個結果，都點進去看了，可是沒有理出頭緒
+但是10.0.14版編譯的時候，並不會產生這樣的問題，所以就用上一個版本10.0.14來安裝
+[ 44%] Building C object sql/CMakeFiles/sql.dir/__/sql-common/mysql_async.c.o
+[ 44%] Building CXX object sql/CMakeFiles/sql.dir/my_apc.cc.o
+[ 44%] Building CXX object sql/CMakeFiles/sql.dir/rpl_gtid.cc.o
+[ 44%] Building CXX object sql/CMakeFiles/sql.dir/rpl_parallel.cc.o
+/usr/local/src/mariadb-10.0.15/sql/rpl_parallel.cc: In member function ‘void rpl_parallel_thread::inuse_relaylog_refcount_update()’:
+/usr/local/src/mariadb-10.0.15/sql/rpl_parallel.cc:1126:5: error: ‘class Relay_log_info’ has no member named ‘inuse_relaylog_atomic_lock’
+/usr/local/src/mariadb-10.0.15/sql/rpl_parallel.cc:1128:5: error: ‘class Relay_log_info’ has no member named ‘inuse_relaylog_atomic_lock’
+make[2]: *** [sql/CMakeFiles/sql.dir/rpl_parallel.cc.o] Error 1
+make[1]: *** [sql/CMakeFiles/sql.dir/all] Error 2
+make: *** [all] Error 2
