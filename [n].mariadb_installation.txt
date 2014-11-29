@@ -93,6 +93,7 @@ socket          = /run/mysqld/mysqld.sock
 
 # The MySQL server
 [mysqld]
+bind-address    = 127.0.0.1
 port            = 3306
 socket          = /run/mysqld/mysqld.sock
 datadir         = /srv/mysql
@@ -104,7 +105,7 @@ net_buffer_length = 16K
 myisam_sort_buffer_size = 8M
 
 # Don't listen on a TCP/IP port at all.
-skip-networking
+#skip-networking
 
 # required unique id between 1 and 2^32 - 1
 server-id       = 1
@@ -153,6 +154,316 @@ interactive-timeout
 
 # End /etc/mysql/my.cnf
 貼上，然後存檔離開vi文字編輯器
+
+為mariadb產生系統資料庫
+# cd /usr/local/mariadb/bin
+# ./mysql_install_db --basedir=/usr/local/mariadb --datadir=/srv/mysql --user=mysql
+
+終端機輸出了
+Installing MariaDB/MySQL system tables in '/srv/mysql' ...
+141129 15:36:02 [Note] InnoDB: Using mutexes to ref count buffer pool pages
+141129 15:36:02 [Note] InnoDB: The InnoDB memory heap is disabled
+141129 15:36:02 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
+141129 15:36:02 [Note] InnoDB: GCC builtin __sync_synchronize() is used for memory barrier
+141129 15:36:02 [Note] InnoDB: Compressed tables use zlib 1.2.7
+141129 15:36:02 [Note] InnoDB: Not using CPU crc32 instructions
+141129 15:36:02 [Note] InnoDB: Initializing buffer pool, size = 128.0M
+141129 15:36:02 [Note] InnoDB: Completed initialization of buffer pool
+141129 15:36:02 [Note] InnoDB: The first specified data file ./ibdata1 did not exist: a new database to be created!
+141129 15:36:02 [Note] InnoDB: Setting file ./ibdata1 size to 12 MB
+141129 15:36:02 [Note] InnoDB: Database physically writes the file full: wait...
+141129 15:36:03 [Note] InnoDB: Setting log file ./ib_logfile101 size to 48 MB
+141129 15:36:04 [Note] InnoDB: Setting log file ./ib_logfile1 size to 48 MB
+141129 15:36:06 [Note] InnoDB: Renaming log file ./ib_logfile101 to ./ib_logfile0
+141129 15:36:06 [Warning] InnoDB: New log files created, LSN=45781
+141129 15:36:06 [Note] InnoDB: Doublewrite buffer not found: creating new
+141129 15:36:06 [Note] InnoDB: Doublewrite buffer created
+141129 15:36:06 [Note] InnoDB: 128 rollback segment(s) are active.
+141129 15:36:06 [Warning] InnoDB: Creating foreign key constraint system tables.
+141129 15:36:07 [Note] InnoDB: Foreign key constraint system tables created
+141129 15:36:07 [Note] InnoDB: Creating tablespace and datafile system tables.
+141129 15:36:07 [Note] InnoDB: Tablespace and datafile system tables created.
+141129 15:36:07 [Note] InnoDB: Waiting for purge to start
+141129 15:36:07 [Note] InnoDB:  Percona XtraDB (http://www.percona.com) 5.6.20-68.0 started; log sequence number 0
+141129 15:36:12 [Note] InnoDB: FTS optimize thread exiting.
+141129 15:36:12 [Note] InnoDB: Starting shutdown...
+141129 15:36:14 [Note] InnoDB: Shutdown completed; log sequence number 1616697
+OK
+Filling help tables...
+141129 15:36:14 [Note] InnoDB: Using mutexes to ref count buffer pool pages
+141129 15:36:14 [Note] InnoDB: The InnoDB memory heap is disabled
+141129 15:36:14 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
+141129 15:36:14 [Note] InnoDB: GCC builtin __sync_synchronize() is used for memory barrier
+141129 15:36:14 [Note] InnoDB: Compressed tables use zlib 1.2.7
+141129 15:36:14 [Note] InnoDB: Not using CPU crc32 instructions
+141129 15:36:14 [Note] InnoDB: Initializing buffer pool, size = 128.0M
+141129 15:36:14 [Note] InnoDB: Completed initialization of buffer pool
+141129 15:36:14 [Note] InnoDB: Highest supported file format is Barracuda.
+141129 15:36:14 [Note] InnoDB: 128 rollback segment(s) are active.
+141129 15:36:14 [Note] InnoDB: Waiting for purge to start
+141129 15:36:14 [Note] InnoDB:  Percona XtraDB (http://www.percona.com) 5.6.20-68.0 started; log sequence number 1616697
+141129 15:36:15 [Note] InnoDB: FTS optimize thread exiting.
+141129 15:36:15 [Note] InnoDB: Starting shutdown...
+141129 15:36:16 [Note] InnoDB: Shutdown completed; log sequence number 1616707
+OK
+
+To start mysqld at boot time you have to copy
+support-files/mysql.server to the right place for your system
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MariaDB root USER !
+To do so, start the server, then issue the following commands:
+
+'/usr/local/mariadb/bin/mysqladmin' -u root password 'new-password'
+'/usr/local/mariadb/bin/mysqladmin' -u root -h cubie password 'new-password'
+
+Alternatively you can run:
+'/usr/local/mariadb/bin/mysql_secure_installation'
+
+which will also give you the option of removing the test
+databases and anonymous user created by default.  This is
+strongly recommended for production servers.
+
+See the MariaDB Knowledgebase at http://mariadb.com/kb or the
+MySQL manual for more instructions.
+
+You can start the MariaDB daemon with:
+cd '/usr/local/mariadb' ; /usr/local/mariadb/bin/mysqld_safe --datadir='/srv/mysql'
+
+You can test the MariaDB daemon with mysql-test-run.pl
+cd '/usr/local/mariadb/mysql-test' ; perl mysql-test-run.pl
+
+Please report any problems at http://mariadb.org/jira
+
+The latest information about MariaDB is available at http://mariadb.org/.
+You can find additional information about the MySQL part at:
+http://dev.mysql.com
+Support MariaDB development by buying support/new features from
+SkySQL Ab. You can contact us about this at sales@skysql.com.
+Alternatively consider joining our community based development effort:
+http://mariadb.com/kb/en/contributing-to-the-mariadb-project/
+
+修改剛才產生的系統資料庫的擁有人和群組
+# chown -R mysql:mysql /srv/mysql
+
+現在照著剛才上面那一大串英文訊息來作
+複製init script到 /etc/init.d
+# cd /usr/local/src/mariadb-10.0.14/support-files
+# cp ./mysql.server /etc/init.d/mysql
+# cd /etc/init.d
+# chmod +x /etc/init.d/mysql
+# ln -s /etc/mysql/my.cnf /etc/my.cnf
+
+修改一下系統的root用戶的.bashrc
+# vi /root/.bashrc
+
+在最後面加上這三行
+# This is for MariaDB
+PATH=$PATH:/usr/local/mariadb/bin:/usr/local/mariadb/sbin
+export PATH
+改完就存檔，離開vi文字編輯器，然後登出，再以root身分登入一次
+上面的這三行設定才會生效
+
+啟動MariaDB
+# service mysql start
+
+確認一下是不是真的啟動MariaDB了？
+# service mysql status
+
+終端機打印了
+[ ok ] MySQL running (4138).
+
+看看3306埠有沒有在監聽？
+# netstat -anp|grep mysql
+
+終端機打印了
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      4138/mysqld     
+unix  2      [ ACC ]     STREAM     LISTENING     87329    4138/mysqld         /run/mysqld/mysqld.sock
+
+設定mariadb的root用戶密碼，以及一些額外的安全設定
+# mysql_secure_installation
+
+和終端機交談一下
+/usr/local/mariadb/bin/mysql_secure_installation: 379: /usr/local/mariadb/bin/mysql_secure_installation: find_mysql_client: not found
+
+NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
+      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+
+In order to log into MariaDB to secure it, we'll need the current
+password for the root user.  If you've just installed MariaDB, and
+you haven't set the root password yet, the password will be blank,
+so you should just press enter here.
+
+Enter current password for root (enter for none): 
+OK, successfully used password, moving on...
+
+Setting the root password ensures that nobody can log into the MariaDB
+root user without the proper authorisation.
+
+Set root password? [Y/n] y
+New password: 
+Re-enter new password: 
+Password updated successfully!
+Reloading privilege tables..
+ ... Success!
+
+
+By default, a MariaDB installation has an anonymous user, allowing anyone
+to log into MariaDB without having to have a user account created for
+them.  This is intended only for testing, and to make the installation
+go a bit smoother.  You should remove them before moving into a
+production environment.
+
+Remove anonymous users? [Y/n] y
+ ... Success!
+
+Normally, root should only be allowed to connect from 'localhost'.  This
+ensures that someone cannot guess at the root password from the network.
+
+Disallow root login remotely? [Y/n] y
+ ... Success!
+
+By default, MariaDB comes with a database named 'test' that anyone can
+access.  This is also intended only for testing, and should be removed
+before moving into a production environment.
+
+Remove test database and access to it? [Y/n] y
+ - Dropping test database...
+ ... Success!
+ - Removing privileges on test database...
+ ... Success!
+
+Reloading the privilege tables will ensure that all changes made so far
+will take effect immediately.
+
+Reload privilege tables now? [Y/n] y
+ ... Success!
+
+Cleaning up...
+
+All done!  If you've completed all of the above steps, your MariaDB
+installation should now be secure.
+
+Thanks for using MariaDB!
+
+這樣大致上完成了MariaDB的安裝
+現在用mysql client端指令去連MariaDB Server試試
+直接給出終端機操作的輸出，如下：
+
+root@cubie:~# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:~# mysql -u root -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 11
+Server version: 10.0.14-MariaDB Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> help
+
+General information about MariaDB can be found at
+http://mariadb.org
+
+List of all MySQL commands:
+Note that all text commands must be first on line and end with ';'
+?         (\?) Synonym for `help'.
+clear     (\c) Clear the current input statement.
+connect   (\r) Reconnect to the server. Optional arguments are db and host.
+delimiter (\d) Set statement delimiter.
+edit      (\e) Edit command with $EDITOR.
+ego       (\G) Send command to mysql server, display result vertically.
+exit      (\q) Exit mysql. Same as quit.
+go        (\g) Send command to mysql server.
+help      (\h) Display this help.
+nopager   (\n) Disable pager, print to stdout.
+notee     (\t) Don't write into outfile.
+pager     (\P) Set PAGER [to_pager]. Print the query results via PAGER.
+print     (\p) Print current command.
+prompt    (\R) Change your mysql prompt.
+quit      (\q) Quit mysql.
+rehash    (\#) Rebuild completion hash.
+source    (\.) Execute an SQL script file. Takes a file name as an argument.
+status    (\s) Get status information from the server.
+system    (\!) Execute a system shell command.
+tee       (\T) Set outfile [to_outfile]. Append everything into given outfile.
+use       (\u) Use another database. Takes database name as argument.
+charset   (\C) Switch to another charset. Might be needed for processing binlog with multi-byte charsets.
+warnings  (\W) Show warnings after every statement.
+nowarning (\w) Don't show warnings after every statement.
+
+For server side help, type 'help contents'
+
+MariaDB [(none)]> use mysql;
+Database changed
+MariaDB [mysql]> show tables;
++---------------------------+
+| Tables_in_mysql           |
++---------------------------+
+| column_stats              |
+| columns_priv              |
+| db                        |
+| event                     |
+| func                      |
+| general_log               |
+| gtid_slave_pos            |
+| help_category             |
+| help_keyword              |
+| help_relation             |
+| help_topic                |
+| host                      |
+| index_stats               |
+| innodb_index_stats        |
+| innodb_table_stats        |
+| plugin                    |
+| proc                      |
+| procs_priv                |
+| proxies_priv              |
+| roles_mapping             |
+| servers                   |
+| slow_log                  |
+| table_stats               |
+| tables_priv               |
+| time_zone                 |
+| time_zone_leap_second     |
+| time_zone_name            |
+| time_zone_transition      |
+| time_zone_transition_type |
+| user                      |
++---------------------------+
+30 rows in set (0.00 sec)
+
+MariaDB [mysql]> exit
+Bye
+
+最後就是把MariaDB設定為開機自動啟動的服務
+# update-rc.d mysql defaults
+
+終端機輸出了
+update-rc.d: using dependency based boot sequencing
+
+接著就重新啟動Cubian，看看MariaDB有沒有開機自動啟動服務？
+# init 6
+
+重新開機完畢，以root用戶登入之後，執行
+# netstat -anp | grep mysql
+
+終端機打印了
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      2597/mysqld     
+unix  2      [ ACC ]     STREAM     LISTENING     3928     2597/mysqld         /run/mysqld/mysqld.sock
+
+耶耶耶，大功告成
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 3.為什麼最新的stable release是10.0.15，可是我在這裡卻安裝10.0.14？
