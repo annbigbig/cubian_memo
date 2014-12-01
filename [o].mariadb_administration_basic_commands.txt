@@ -1,0 +1,76 @@
+o.MariaDB服務器管理基礎
+
+大綱：
+（服務器 : server daemon related）
+　　　1.查看mysqld運行狀態
+　　　2.啟動、重啟、停止、重載mysqld
+　　　3.重要檔案及目錄的路徑
+
+（用戶端連線 : command line client）
+　　　4.使用不是很優雅的方式連入MariaDB
+　　　5.使用安全的方式連入MariaDB
+
+（資料庫 : databases）
+　　　6.列出所有資料庫名稱
+　　　7.新增資料庫
+　　　8.刪除資料庫
+
+（用戶與權限 : users and grant permissions）
+
+（資料表 : tables）
+
+（欄位 : columns）
+
+（記錄列 : records）
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.使用不是很優雅的方式連入MariaDB
+root@cubie:~# mysql -u root -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 4
+Server version: 10.0.14-MariaDB Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]>
+
+還有一種方式是連密碼一起作一次輸入
+指令是
+# mysql -u root -pMYPASSWORD
+-p的後面緊緊貼著你的MariaDB的root用戶密碼
+非常不建議這樣使用，因為很不安全
+別忘了~/.bash_history裡存放著所有你曾經執行過的終端機指令
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+5.使用安全的方式連入MariaDB
+
+直接給出終端機輸出比較快，如下
+root@cubie:~# touch ./mysql_client_settings.txt
+root@cubie:~# echo "[client]" >> ./mysql_client_settings.txt
+root@cubie:~# echo "user = root" >> ./mysql_client_settings.txt
+root@cubie:~# echo "password=root" >> ./mysql_client_settings.txt
+root@cubie:~# chown root:root ./mysql_client_settings.txt
+root@cubie:~# chmod 600 ./mysql_client_settings.txt
+root@cubie:~# ls -al|grep setting
+-rw-------  1 root root    35 12月  1 23:11 mysql_client_settings.txt
+root@cubie:~# cat ./mysql_client_settings.txt
+[client]
+user = root
+password=root
+root@cubie:~# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:~# mysql --defaults-file=/root/mysql_client_settings.txt
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 3
+Server version: 10.0.14-MariaDB Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
