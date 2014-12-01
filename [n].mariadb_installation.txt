@@ -74,16 +74,12 @@ http://www.linuxfromscratch.org/blfs/view/svn/server/mariadb.html
 # chown -R mysql:mysql ./mariadb-10.0.14
 # ln -s mariadb-10.0.14 mariadb
 
-產生/etc/mysql目錄，並設定好權限
-# install -v -dm 755 /etc/mysql
-# chown root:root /etc/mysql
-
 產生my.cnf設定檔
-# touch /etc/mysql/my.cnf
-# vi /etc/mysql/my.cnf
+# touch /etc/my.cnf
+# vi /etc/my.cnf
 
 內容如下：
-# Begin /etc/mysql/my.cnf
+# Begin /etc/my.cnf
 
 # The following options will be passed to all MySQL clients
 [client]
@@ -152,7 +148,7 @@ write_buffer = 2M
 [mysqlhotcopy]
 interactive-timeout
 
-# End /etc/mysql/my.cnf
+# End /etc/my.cnf
 貼上，然後存檔離開vi文字編輯器
 
 為mariadb產生系統資料庫
@@ -251,7 +247,6 @@ http://mariadb.com/kb/en/contributing-to-the-mariadb-project/
 # cp ./mysql.server /etc/init.d/mysql
 # cd /etc/init.d
 # chmod +x /etc/init.d/mysql
-# ln -s /etc/mysql/my.cnf /etc/my.cnf
 
 修改一下系統的root用戶的.bashrc
 # vi /root/.bashrc
