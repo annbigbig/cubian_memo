@@ -124,6 +124,9 @@ server-id       = 1
 #innodb_flush_log_at_trx_commit = 1
 #innodb_lock_wait_timeout = 50
 
+# don't waste time to check domain name's validity
+skip-name-resolv=1
+
 [mysqldump]
 quick
 max_allowed_packet = 16M
