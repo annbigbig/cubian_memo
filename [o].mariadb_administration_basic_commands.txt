@@ -10,12 +10,19 @@ o.MariaDB服務器管理基礎
 　　　4.使用不是很優雅的方式連入MariaDB
 　　　5.使用安全的方式連入MariaDB
 
+（用戶與權限 : users and grant permissions）
+　　　6.列出目前所有資料庫用戶名稱
+　　　7.查看某一位用戶的權限
+　　　8.新增用戶
+　　　9.給予權限
+　　　10.收回權限
+　　　11.刪除用戶
+　　　12.變更用戶密碼
+
 （資料庫 : databases）
 　　　6.列出所有資料庫名稱
 　　　7.新增資料庫
 　　　8.刪除資料庫
-
-（用戶與權限 : users and grant permissions）
 
 （資料表 : tables）
 
@@ -72,5 +79,227 @@ Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
 MariaDB [(none)]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+6.列出目前所有資料庫用戶名稱
+
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> use mysql;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [mysql]> show tables;
++---------------------------+
+| Tables_in_mysql           |
++---------------------------+
+| column_stats              |
+| columns_priv              |
+| db                        |
+| event                     |
+| func                      |
+| general_log               |
+| gtid_slave_pos            |
+| help_category             |
+| help_keyword              |
+| help_relation             |
+| help_topic                |
+| host                      |
+| index_stats               |
+| innodb_index_stats        |
+| innodb_table_stats        |
+| plugin                    |
+| proc                      |
+| procs_priv                |
+| proxies_priv              |
+| roles_mapping             |
+| servers                   |
+| slow_log                  |
+| table_stats               |
+| tables_priv               |
+| time_zone                 |
+| time_zone_leap_second     |
+| time_zone_name            |
+| time_zone_transition      |
+| time_zone_transition_type |
+| user                      |
++---------------------------+
+30 rows in set (0.00 sec)
+
+MariaDB [mysql]> select User,Host from user;
++------+-----------+
+| User | Host      |
++------+-----------+
+| root | 127.0.0.1 |
+| root | ::1       |
+| root | localhost |
++------+-----------+
+3 rows in set (0.00 sec)
+
+MariaDB [mysql]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+7.查看某一位用戶的權限
+
+MariaDB [(none)]> SHOW GRANTS FOR 'root'@'localhost';
++----------------------------------------------------------------------------------------------------------------------------------------+
+| Grants for root@localhost                                                                                                              |
++----------------------------------------------------------------------------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY PASSWORD '*81F5E21E35407D884A6CD4A731AEBFB6AF209E1B' WITH GRANT OPTION |
+| GRANT PROXY ON ''@'%' TO 'root'@'localhost' WITH GRANT OPTION                                                                          |
++----------------------------------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+MariaDB [(none)]> SHOW GRANTS FOR 'root'@'127.0.0.1';
++----------------------------------------------------------------------------------------------------------------------------------------+
+| Grants for root@127.0.0.1                                                                                                              |
++----------------------------------------------------------------------------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY PASSWORD '*81F5E21E35407D884A6CD4A731AEBFB6AF209E1B' WITH GRANT OPTION |
++----------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [(none)]> SHOW GRANTS FOR 'root'@'::1';
++----------------------------------------------------------------------------------------------------------------------------------+
+| Grants for root@::1                                                                                                              |
++----------------------------------------------------------------------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'root'@'::1' IDENTIFIED BY PASSWORD '*81F5E21E35407D884A6CD4A731AEBFB6AF209E1B' WITH GRANT OPTION |
++----------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [(none)]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+8.新增一個用戶
+
+MariaDB [(none)]> CREATE USER 'chakra'@'%' IDENTIFIED BY 'password1111';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'tony'@'localhost' IDENTIFIED BY 'password2222';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'dgdg'@'host1.example.net' IDENTIFIED BY 'password3333';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'narudo'@'%.example.net' IDENTIFIED BY 'password4444';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'nodelasky'@'192.168.0.12' IDENTIFIED BY 'password5555';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'jojo'@'192.168.0.%' IDENTIFIED BY 'password6666';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> CREATE USER 'laravel'@'192.168.0.0/255.255.255.0' IDENTIFIED BY 'password7777';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> use mysql;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [mysql]> describe user;
++------------------------+-----------------------------------+------+-----+---------+-------+
+| Field                  | Type                              | Null | Key | Default | Extra |
++------------------------+-----------------------------------+------+-----+---------+-------+
+| Host                   | char(60)                          | NO   | PRI |         |       |
+| User                   | char(80)                          | NO   | PRI |         |       |
+| Password               | char(41)                          | NO   |     |         |       |
+| Select_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Insert_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Update_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Delete_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Create_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Drop_priv              | enum('N','Y')                     | NO   |     | N       |       |
+| Reload_priv            | enum('N','Y')                     | NO   |     | N       |       |
+| Shutdown_priv          | enum('N','Y')                     | NO   |     | N       |       |
+| Process_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| File_priv              | enum('N','Y')                     | NO   |     | N       |       |
+| Grant_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| References_priv        | enum('N','Y')                     | NO   |     | N       |       |
+| Index_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Alter_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Show_db_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Super_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Create_tmp_table_priv  | enum('N','Y')                     | NO   |     | N       |       |
+| Lock_tables_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Execute_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Repl_slave_priv        | enum('N','Y')                     | NO   |     | N       |       |
+| Repl_client_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Create_view_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Show_view_priv         | enum('N','Y')                     | NO   |     | N       |       |
+| Create_routine_priv    | enum('N','Y')                     | NO   |     | N       |       |
+| Alter_routine_priv     | enum('N','Y')                     | NO   |     | N       |       |
+| Create_user_priv       | enum('N','Y')                     | NO   |     | N       |       |
+| Event_priv             | enum('N','Y')                     | NO   |     | N       |       |
+| Trigger_priv           | enum('N','Y')                     | NO   |     | N       |       |
+| Create_tablespace_priv | enum('N','Y')                     | NO   |     | N       |       |
+| ssl_type               | enum('','ANY','X509','SPECIFIED') | NO   |     |         |       |
+| ssl_cipher             | blob                              | NO   |     | NULL    |       |
+| x509_issuer            | blob                              | NO   |     | NULL    |       |
+| x509_subject           | blob                              | NO   |     | NULL    |       |
+| max_questions          | int(11) unsigned                  | NO   |     | 0       |       |
+| max_updates            | int(11) unsigned                  | NO   |     | 0       |       |
+| max_connections        | int(11) unsigned                  | NO   |     | 0       |       |
+| max_user_connections   | int(11)                           | NO   |     | 0       |       |
+| plugin                 | char(64)                          | NO   |     |         |       |
+| authentication_string  | text                              | NO   |     | NULL    |       |
+| password_expired       | enum('N','Y')                     | NO   |     | N       |       |
+| is_role                | enum('N','Y')                     | NO   |     | N       |       |
++------------------------+-----------------------------------+------+-----+---------+-------+
+44 rows in set (0.03 sec)
+
+MariaDB [mysql]> select User,Host,Password from user;
++-----------+---------------------------+-------------------------------------------+
+| User      | Host                      | Password                                  |
++-----------+---------------------------+-------------------------------------------+
+| root      | localhost                 | *81F5E21E35407D884A6CD4A731AEBFB6AF209E1B |
+| root      | 127.0.0.1                 | *81F5E21E35407D884A6CD4A731AEBFB6AF209E1B |
+| root      | ::1                       | *81F5E21E35407D884A6CD4A731AEBFB6AF209E1B |
+| tony      | localhost                 | *739AC22A9A52BA49DFBEA94CFF72CD2EB9073422 |
+| chakra    | %                         | *1D4B7A462F788B40C331CB3D1DCFD4AD99CAAA16 |
+| dgdg      | host1.example.net         | *761A0433732816E7C8FA3B75988F2C7F040901AE |
+| narudo    | %.example.net             | *C9227A2D81C4C9794F3D69D6E68A1042B66DF07F |
+| nodelasky | 192.168.0.12              | *4D60DB4F79E0B82BA8A0F92F876EFCE34A66CE3A |
+| jojo      | 192.168.0.%               | *0B6AF54E7A71E9833EFD9954B4AC16E0BDFDD01E |
+| laravel   | 192.168.0.0/255.255.255.0 | *C7B931A62D265417B627B6AA1DD3747A7EBE4639 |
++-----------+---------------------------+-------------------------------------------+
+10 rows in set (0.01 sec)
+
+MariaDB [mysql]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
