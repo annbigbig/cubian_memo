@@ -86,6 +86,7 @@ http://www.linuxfromscratch.org/blfs/view/svn/server/mariadb.html
 #password       = your_password
 port            = 3306
 socket          = /run/mysqld/mysqld.sock
+default-character-set=utf8
 
 # The MySQL server
 [mysqld]
@@ -127,6 +128,11 @@ server-id       = 1
 # don't waste time to check domain name's validity
 skip-name-resolv=1
 
+# charset utf8
+collation-server = utf8_unicode_ci
+init-connect='SET NAMES utf8'
+character-set-server = utf8
+
 [mysqldump]
 quick
 max_allowed_packet = 16M
@@ -135,6 +141,7 @@ max_allowed_packet = 16M
 no-auto-rehash
 # Remove the next comment character if you are not familiar with SQL
 #safe-updates
+default-character-set=utf8
 
 [isamchk]
 key_buffer = 20M

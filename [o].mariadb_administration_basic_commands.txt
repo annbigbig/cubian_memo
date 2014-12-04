@@ -34,6 +34,9 @@ o.MariaDB服務器管理基礎
 　　　20.刪除資料表
 
 （欄位 : columns）
+　　　21.新增欄位
+　　　22.修改欄位
+　　　23.刪除欄位
 
 （記錄列 : records）
 
@@ -606,14 +609,74 @@ MariaDB [(none)]>
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 14.新增資料庫
 
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
 
+MariaDB [(none)]> CREATE DATABASE testdb1;
+Query OK, 1 row affected (0.00 sec)
 
+MariaDB [(none)]> CREATE DATABASE IF NOT EXISTS testdb2;
+Query OK, 1 row affected (0.00 sec)
+
+MariaDB [(none)]> CREATE DATABASE testdb3;
+Query OK, 1 row affected (0.00 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
+| testdb2            |
+| testdb3            |
++--------------------+
+6 rows in set (0.00 sec)
+
+MariaDB [(none)]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 15.刪除資料庫
 
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
+| testdb2            |
+| testdb3            |
++--------------------+
+6 rows in set (0.00 sec)
 
+MariaDB [(none)]> DROP DATABASE testdb2;
+Query OK, 0 rows affected (0.00 sec)
 
+MariaDB [(none)]> DROP DATABASE IF EXISTS testdb3;
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 16.選定一個資料庫
@@ -626,11 +689,146 @@ Database changed
 MariaDB [mysql]> 
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+17.列出目前選定資料庫內所有資料表名稱
 
+MariaDB [(none)]> use mysql;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
 
+Database changed
+MariaDB [mysql]> show tables;
++---------------------------+
+| Tables_in_mysql           |
++---------------------------+
+| column_stats              |
+| columns_priv              |
+| db                        |
+| event                     |
+| func                      |
+| general_log               |
+| gtid_slave_pos            |
+| help_category             |
+| help_keyword              |
+| help_relation             |
+| help_topic                |
+| host                      |
+| index_stats               |
+| innodb_index_stats        |
+| innodb_table_stats        |
+| plugin                    |
+| proc                      |
+| procs_priv                |
+| proxies_priv              |
+| roles_mapping             |
+| servers                   |
+| slow_log                  |
+| table_stats               |
+| tables_priv               |
+| time_zone                 |
+| time_zone_leap_second     |
+| time_zone_name            |
+| time_zone_transition      |
+| time_zone_transition_type |
+| user                      |
++---------------------------+
+30 rows in set (0.00 sec)
+
+MariaDB [mysql]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+18.新增資料表
 
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.00 sec)
 
+MariaDB [(none)]> USE testdb1;
+Database changed
+MariaDB [testdb1]> SHOW TABLES;
+Empty set (0.00 sec)
+
+MariaDB [testdb1]> CREATE TABLE employees (
+    -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    -> surname VARCHAR(100),
+    -> givenname VARCHAR(100),
+    -> pref_name VARCHAR(50),
+    -> birthday DATE
+    -> );
+Query OK, 0 rows affected (0.30 sec)
+
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| employees         |
++-------------------+
+1 row in set (0.00 sec)
+
+MariaDB [testdb1]> SHOW CREATE TABLE employees\G
+*************************** 1. row ***************************
+       Table: employees
+Create Table: CREATE TABLE `employees` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `surname` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `givenname` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `pref_name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `birthday` date DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+1 row in set (0.00 sec)
+
+MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+19.查看資料表結構
+
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| employees         |
++-------------------+
+1 row in set (0.00 sec)
+
+MariaDB [testdb1]> DESCRIBE employees;
++-----------+--------------+------+-----+---------+----------------+
+| Field     | Type         | Null | Key | Default | Extra          |
++-----------+--------------+------+-----+---------+----------------+
+| id        | int(11)      | NO   | PRI | NULL    | auto_increment |
+| surname   | varchar(100) | YES  |     | NULL    |                |
+| givenname | varchar(100) | YES  |     | NULL    |                |
+| pref_name | varchar(50)  | YES  |     | NULL    |                |
+| birthday  | date         | YES  |     | NULL    |                |
++-----------+--------------+------+-----+---------+----------------+
+5 rows in set (0.01 sec)
+
+MariaDB [testdb1]> 
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+20.刪除資料表
+
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| employees         |
++-------------------+
+1 row in set (0.00 sec)
+
+MariaDB [testdb1]> DROP TABLE employees;
+Query OK, 0 rows affected (0.13 sec)
+
+MariaDB [testdb1]> SHOW TABLES;
+Empty set (0.00 sec)
+
+MariaDB [testdb1]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+（今天有點混，沒啥進度，不好意思…）
