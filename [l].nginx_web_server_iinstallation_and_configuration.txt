@@ -4,6 +4,7 @@ l.安裝nginx服務器 + php-fpm
 1.安裝好nginx服務器，並設定成開機自動啟動的服務
 2.安裝好php-fpm，並設定成開機自動啟動的服務
 3.設定nginx.conf讓nginx服務器可以解釋*.php的檔案
+4.修改nginx服務器預設的charset為utf-8
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.安裝好nginx服務器，並設定成開機自動啟動的服務
@@ -405,6 +406,11 @@ Installing PDO headers:          /usr/local/php-5.5.19/include/php/ext/pdo/
 ;cgi.fix_pathinfo=1
 改成這樣
 cgi.fix_pathinfo=0
+
+還有這一行
+;default_charset = "UTF-8"
+改成這樣
+default_charset = "UTF-8"
 然後存檔離開vi文字編輯器
 
 接著修改php-fpm.conf
@@ -567,6 +573,36 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 http://192.168.0.162
 
 這時候你應該就會看到phpinfo()函式所產生的index.php頁面了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.修改nginx服務器預設的charset為utf-8
+
+# vi /usr/local/nginx/conf/nginx.conf
+
+http {
+          (some other settings ...)
+
+          charset utf-8;
+
+          (some other settings ...)
+}
+
+改好之後檢查一下設定檔的正確性，看看有沒有打錯字還是把指令插到了錯誤的區塊？
+# cd /usr/local/nginx
+# sbin/nginx -t -c conf/nginx.conf
+
+沒什麼意外的話，會看到這個訊息，這表示你的設定檔是語法正確的
+nginx: the configuration file /usr/local/nginx-1.6.2/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is successful
+
+重新啟動一下nginx服務器
+# service nginx restart
+
+看一下是不是重啟動成功了？
+# service nginx status
+
+或是
+# netstat -anp | grep nginx
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 
