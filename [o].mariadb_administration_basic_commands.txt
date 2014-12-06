@@ -44,6 +44,15 @@ o.MariaDB服務器管理基礎
 　　　26.刪除記錄列
 　　　27.列出記錄列
 
+（多表查詢 : SQL JOIN）
+　　　28.產生演示所需要的兩個表格及資料
+　　　29.CROSS JOIN
+　　　30.INNER JOIN
+　　　31.OUTER JOIN (LEFT JOIN)
+　　　32.OUTER JOIN (RIGHT JOIN)
+　　　33.OUTER JOIN (FULL)
+　　　34.SELF JOIN
+
 （備份及還原：backup and restore）
 
 （抄寫 : replication from master）

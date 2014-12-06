@@ -1,4 +1,4 @@
-f.安裝x11vnc服務器，並設定好開機自動執行
+f.安裝x11vnc服務器，並設定好開機自動執行，並使用ssh tunnel加密連線
 
 參考資料來源：
 http://terry.im/wiki/terry/Install%2Band%2BConfig%2BVNC%2BServer.html#InstallandConfigVNCServer-Ubuntu/Debian
@@ -96,3 +96,47 @@ x11vnc -safer -forever -display :0 -rfbauth /root/vncpasswd -rfbport 59000 -bg >
 這個檔案裡的最後兩行是我們剛才加上去的
 接著x11vnc也在自動登入圖形介面之後，自動於埠號59000啟動了
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+額外的安全設定：使用ssh tunnel加密vnc連線
+
+網路參數：
+稍早前我又改變心意，把網路線接到CubieTruck的RJ45接口上了
+所以網路參數現在是
+Cubian機：192.168.0.160
+筆記型電腦：192.168.0.12
+
+參考資料：
+http://www.karlrunge.com/x11vnc/#tunnelling
+（作者寫得超長，不過我只有參考SSH method: If both users開頭下面那二十幾行…）
+這一篇文章寫了幾個方法都可以建立加密通道
+不過這個我一試就成，我也懶得去試其他的了，反正效果都一樣，有給我乖乖加密就好
+
+動手之前先微調上面我們剛完成的/usr/lib/cubian/cubian-xinitrc-success
+# vi /usr/lib/cubian/cubian-xinitrc-success
+
+把裡面啟動x11vnc的那行指令改成這樣
+x11vnc -safer -forever -display :0 -rfbauth /root/vncpasswd -localhost -rfbport 5900 -bg > /tmp/x11vnc.log 2>&1 &
+
+這麼作是為了要讓x11vnc綁定在127.0.0.1:5900
+改好之後請重新啟動Cubian機器之後，再作下面的動作，執行
+# init 6
+
+要建立ssh tunnel，必須要VNC Server（Cubian機）和VNC Viewer（筆記型電腦）同時議定一個port number
+在這裡我假設是5933
+
+在VNC Server這邊，也就是Cubian機器上，請以用戶cubie登入，然後執行
+$ ssh -p36000 -t -R 5933:localhost:5900 cubie@localhost
+
+在VNC Viewer這邊，也就是筆記型電腦上，請以用戶anntony身分登入，然後執行
+$ cd /home/anntony/.ssh/cubian
+$ ssh -p36000 -i ./cubie@cubian.private.key -t -L 5900:localhost:5933 cubie@192.168.0.160
+
+這樣就可以了，然後我們在筆記型電腦上面打開遠端桌面檢視器 vinagre
+對著這個地址作連線
+127.0.0.1:5900
+
+按下連線之後，大功告成
+值得注意的是，在VNC Server端還有VNC Client端我們都各自執行了一個ssh指令
+如果其中一邊退出了ssh登入，那麼你在筆記型電腦上，就再不能使用127.0.0.1:5900來連到Cubian機器上運行的VNC Server了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
