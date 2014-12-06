@@ -1093,9 +1093,77 @@ MariaDB [testdb1]> SELECT * FROM employees;
 MariaDB [testdb1]> 
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+27.列出記錄列
 
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| employees         |
++-------------------+
+1 row in set (0.01 sec)
+
+MariaDB [testdb1]> SELECT * FROM employees;
++----+----------+-------------+-----------+------------+
+| id | surname  | givenname   | pref_name | birthday   |
++----+----------+-------------+-----------+------------+
+|  1 | Picachu  | Kenny       | Pika Pika | 1950-11-23 |
+|  2 | Narudo   | Tony        | Utsumaki  | 1990-03-15 |
+|  3 | Sabastin | Landy       | NULL      | 1966-04-12 |
+|  4 | Charky   | Chakura Bom | Chakura   | 1975-02-03 |
+|  5 | RcLond   | NULL        | NULL      | NULL       |
++----+----------+-------------+-----------+------------+
+5 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT id,pref_name,surname FROM employees;
++----+-----------+----------+
+| id | pref_name | surname  |
++----+-----------+----------+
+|  1 | Pika Pika | Picachu  |
+|  2 | Utsumaki  | Narudo   |
+|  3 | NULL      | Sabastin |
+|  4 | Chakura   | Charky   |
+|  5 | NULL      | RcLond   |
++----+-----------+----------+
+5 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employees WHERE birthday > '1970-01-01';
++----+---------+-------------+-----------+------------+
+| id | surname | givenname   | pref_name | birthday   |
++----+---------+-------------+-----------+------------+
+|  2 | Narudo  | Tony        | Utsumaki  | 1990-03-15 |
+|  4 | Charky  | Chakura Bom | Chakura   | 1975-02-03 |
++----+---------+-------------+-----------+------------+
+2 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employees ORDER BY surname;
++----+----------+-------------+-----------+------------+
+| id | surname  | givenname   | pref_name | birthday   |
++----+----------+-------------+-----------+------------+
+|  4 | Charky   | Chakura Bom | Chakura   | 1975-02-03 |
+|  2 | Narudo   | Tony        | Utsumaki  | 1990-03-15 |
+|  1 | Picachu  | Kenny       | Pika Pika | 1950-11-23 |
+|  5 | RcLond   | NULL        | NULL      | NULL       |
+|  3 | Sabastin | Landy       | NULL      | 1966-04-12 |
++----+----------+-------------+-----------+------------+
+5 rows in set (0.01 sec)
+
+MariaDB [testdb1]> SELECT * FROM employees WHERE surname LIKE "Pic%";
++----+---------+-----------+-----------+------------+
+| id | surname | givenname | pref_name | birthday   |
++----+---------+-----------+-----------+------------+
+|  1 | Picachu | Kenny     | Pika Pika | 1950-11-23 |
++----+---------+-----------+-----------+------------+
+1 row in set (0.00 sec)
+
+MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+28.產生演示所需要的兩個表格及資料
 
+參考資料
+http://en.wikipedia.org/wiki/Join_%28SQL%29
+
+（我好餓，先吃消夜去…）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
