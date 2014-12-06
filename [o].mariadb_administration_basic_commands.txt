@@ -39,6 +39,10 @@ o.MariaDB服務器管理基礎
 　　　23.刪除欄位
 
 （記錄列 : records）
+　　　24.新增記錄列
+　　　25.修改記錄列
+　　　26.刪除記錄列
+　　　27.列出記錄列
 
 （備份及還原：backup and restore）
 
@@ -942,9 +946,61 @@ MariaDB [testdb1]> DESCRIBE employees;
 MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+24.新增記錄列
 
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| employees         |
++-------------------+
+1 row in set (0.00 sec)
 
+MariaDB [testdb1]> DESCRIBE employees;
++-----------+--------------+------+-----+---------+----------------+
+| Field     | Type         | Null | Key | Default | Extra          |
++-----------+--------------+------+-----+---------+----------------+
+| id        | int(11)      | NO   | PRI | NULL    | auto_increment |
+| surname   | varchar(100) | YES  |     | NULL    |                |
+| givenname | varchar(100) | YES  |     | NULL    |                |
+| pref_name | varchar(25)  | YES  |     | NULL    |                |
+| birthday  | date         | YES  |     | NULL    |                |
++-----------+--------------+------+-----+---------+----------------+
+5 rows in set (0.03 sec)
 
+MariaDB [testdb1]> SELECT * FROM employees;
+Empty set (0.01 sec)
+
+MariaDB [testdb1]> INSERT INTO employees (surname,givenname) VALUES
+    -> ("Picachu","Kenny"),
+    -> ("Narudo","Tony"),
+    -> ("Sabastin","Landy");
+Query OK, 3 rows affected (0.05 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+MariaDB [testdb1]> INSERT INTO employees (pref_name,givenname,surname,birthday) VALUES ("Chakura","Chakura Bom","Charky","1975-02-03");
+Query OK, 1 row affected (0.04 sec)
+
+MariaDB [testdb1]> INSERT employees (surname) VALUE ("RcLond");
+Query OK, 1 row affected (0.04 sec)
+
+MariaDB [testdb1]> INSERT INTO employees VALUES (NULL,"Duran","Jin-Duran",NULL,NULL);
+Query OK, 1 row affected (0.05 sec)
+
+MariaDB [testdb1]> SELECT * FROM employees;
++----+----------+-------------+-----------+------------+
+| id | surname  | givenname   | pref_name | birthday   |
++----+----------+-------------+-----------+------------+
+|  1 | Picachu  | Kenny       | NULL      | NULL       |
+|  2 | Narudo   | Tony        | NULL      | NULL       |
+|  3 | Sabastin | Landy       | NULL      | NULL       |
+|  4 | Charky   | Chakura Bom | Chakura   | 1975-02-03 |
+|  5 | RcLond   | NULL        | NULL      | NULL       |
+|  6 | Duran    | Jin-Duran   | NULL      | NULL       |
++----+----------+-------------+-----------+------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 
