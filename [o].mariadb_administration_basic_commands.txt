@@ -1405,3 +1405,62 @@ SELECT * FROM employee,department;
 第二句雖然沒有寫出CROSS JOIN關鍵字，但是執行結果和前面第一句有強調CROSS JOIN是一樣的
 指令產生的結果表格都是employee表格和department表格的笛卡兒乘積
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+30.INNER JOIN
+兩個參與JOIN的表格，裡面分別要有一個欄位的值，是兜得起來的，才會被選為結果表的記錄列
+我懷疑我有點語言障礙，我想說得更清楚但沒辦法，看實際操作好了
+
+顯式用法
+MariaDB [testdb1]> SELECT * FROM employee INNER JOIN department ON employee.DepartmentID = department.DepartmentID;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Smith      |           34 |           34 | Clerical       |
++------------+--------------+--------------+----------------+
+5 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+隱式用法
+MariaDB [testdb1]> SELECT * FROM employee,department WHERE employee.DepartmentID = department.DepartmentID;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Smith      |           34 |           34 | Clerical       |
++------------+--------------+--------------+----------------+
+5 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+注意在employee表格裡的Williams那一個員工
+還有在department表格裡的Marketing這個部門
+完全沒有出現在上面的INNER JOIN結果表格中（無論是顯式或是隱式用法）
+這是因為員工Williams沒有DepartmentID
+而Marketing部門也沒有擁有任何員工（沒有任何DepartmentID為35的員工記錄存在）
+就如同前面我所說的，參與INNER JOIN運算的兩個表格裡
+分別要有一個欄位的值（在這裡是DepartmentID）要一樣
+才會被選進結果表的記錄列裡
+在寫程式的時候要注意INNER JOIN和OUTER JOIN所產生的結果表有著微妙的差異
+不然可能會寫出有bug的程式
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
