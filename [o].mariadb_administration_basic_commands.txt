@@ -1163,7 +1163,245 @@ MariaDB [testdb1]>
 
 參考資料
 http://en.wikipedia.org/wiki/Join_%28SQL%29
+http://stackoverflow.com/questions/5152921/import-sql-file-from-mysql-console
 
-（我好餓，先吃消夜去…）
+root@cubie:~# pwd
+/root
+root@cubie:~# ls
+example.sql  mysql_client_settings.txt	sunxi-tools  vncpasswd
+root@cubie:~# cat ./example.sql
+CREATE TABLE department
+(
+ DepartmentID INT,
+ DepartmentName VARCHAR(20)
+);
+ 
+CREATE TABLE employee
+(
+ LastName VARCHAR(20),
+ DepartmentID INT
+);
+ 
+INSERT INTO department VALUES(31, 'Sales');
+INSERT INTO department VALUES(33, 'Engineering');
+INSERT INTO department VALUES(34, 'Clerical');
+INSERT INTO department VALUES(35, 'Marketing');
+ 
+INSERT INTO employee VALUES('Rafferty', 31);
+INSERT INTO employee VALUES('Jones', 33);
+INSERT INTO employee VALUES('Heisenberg', 33);
+INSERT INTO employee VALUES('Robinson', 34);
+INSERT INTO employee VALUES('Smith', 34);
+INSERT INTO employee VALUES('Williams', NULL);
+root@cubie:~# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 4
+Server version: 10.0.14-MariaDB Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> use testdb1;
+Database changed
+MariaDB [testdb1]> SHOW TABLES;
+Empty set (0.01 sec)
+
+MariaDB [testdb1]> SOURCE /root/example.sql;
+Query OK, 0 rows affected (0.34 sec)
+
+Query OK, 0 rows affected (0.30 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.13 sec)
+
+Query OK, 1 row affected (0.05 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.05 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.05 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.05 sec)
+
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| department        |
+| employee          |
++-------------------+
+2 rows in set (0.01 sec)
+
+MariaDB [testdb1]> SELECT * FROM department;
++--------------+----------------+
+| DepartmentID | DepartmentName |
++--------------+----------------+
+|           31 | Sales          |
+|           33 | Engineering    |
+|           34 | Clerical       |
+|           35 | Marketing      |
++--------------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employee;
++------------+--------------+
+| LastName   | DepartmentID |
++------------+--------------+
+| Rafferty   |           31 |
+| Jones      |           33 |
+| Heisenberg |           33 |
+| Robinson   |           34 |
+| Smith      |           34 |
+| Williams   |         NULL |
++------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb1]> DESCRIBE department;
++----------------+-------------+------+-----+---------+-------+
+| Field          | Type        | Null | Key | Default | Extra |
++----------------+-------------+------+-----+---------+-------+
+| DepartmentID   | int(11)     | YES  |     | NULL    |       |
+| DepartmentName | varchar(20) | YES  |     | NULL    |       |
++----------------+-------------+------+-----+---------+-------+
+2 rows in set (0.03 sec)
+
+MariaDB [testdb1]> DESCRIBE employee;
++--------------+-------------+------+-----+---------+-------+
+| Field        | Type        | Null | Key | Default | Extra |
++--------------+-------------+------+-----+---------+-------+
+| LastName     | varchar(20) | YES  |     | NULL    |       |
+| DepartmentID | int(11)     | YES  |     | NULL    |       |
++--------------+-------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+MariaDB [testdb1]> 
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+29.CROSS JOIN
+
+CROSS JOIN產生的結果為Cartesian product（中譯：笛卡兒乘積）
+關於笛卡兒乘積的說明可在這裡了解意義
+http://zh.wikipedia.org/wiki/%E7%AC%9B%E5%8D%A1%E5%84%BF%E7%A7%AF
+維基百科的此頁面有個簡單的解釋，集合X是 { A,K,Q,J,10,9,8,7,6,5,4,3,2 }
+而集合Y是 { 黑桃、紅心、方塊、梅花 }，則集合X與集合Y的笛卡兒乘積是一副標準樸克牌的52個元素的集合
+{ (A,黑桃),(K,黑桃),(Q,黑桃),(J,黑桃),.......(4,梅花),(3,梅花),(2,梅花) }
+有點像以前中學數學裡學過的多項式乘法 (a+b)(c+d) = ac + ad + bc + bd 的概念
+
+MariaDB [testdb1]> SELECT * FROM department;
++--------------+----------------+
+| DepartmentID | DepartmentName |
++--------------+----------------+
+|           31 | Sales          |
+|           33 | Engineering    |
+|           34 | Clerical       |
+|           35 | Marketing      |
++--------------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employee;
++------------+--------------+
+| LastName   | DepartmentID |
++------------+--------------+
+| Rafferty   |           31 |
+| Jones      |           33 |
+| Heisenberg |           33 |
+| Robinson   |           34 |
+| Smith      |           34 |
+| Williams   |         NULL |
++------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employee CROSS JOIN department;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Rafferty   |           31 |           33 | Engineering    |
+| Rafferty   |           31 |           34 | Clerical       |
+| Rafferty   |           31 |           35 | Marketing      |
+| Jones      |           33 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Jones      |           33 |           34 | Clerical       |
+| Jones      |           33 |           35 | Marketing      |
+| Heisenberg |           33 |           31 | Sales          |
+| Heisenberg |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           34 | Clerical       |
+| Heisenberg |           33 |           35 | Marketing      |
+| Robinson   |           34 |           31 | Sales          |
+| Robinson   |           34 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Robinson   |           34 |           35 | Marketing      |
+| Smith      |           34 |           31 | Sales          |
+| Smith      |           34 |           33 | Engineering    |
+| Smith      |           34 |           34 | Clerical       |
+| Smith      |           34 |           35 | Marketing      |
+| Williams   |         NULL |           31 | Sales          |
+| Williams   |         NULL |           33 | Engineering    |
+| Williams   |         NULL |           34 | Clerical       |
+| Williams   |         NULL |           35 | Marketing      |
++------------+--------------+--------------+----------------+
+24 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employee,department;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Rafferty   |           31 |           33 | Engineering    |
+| Rafferty   |           31 |           34 | Clerical       |
+| Rafferty   |           31 |           35 | Marketing      |
+| Jones      |           33 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Jones      |           33 |           34 | Clerical       |
+| Jones      |           33 |           35 | Marketing      |
+| Heisenberg |           33 |           31 | Sales          |
+| Heisenberg |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           34 | Clerical       |
+| Heisenberg |           33 |           35 | Marketing      |
+| Robinson   |           34 |           31 | Sales          |
+| Robinson   |           34 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Robinson   |           34 |           35 | Marketing      |
+| Smith      |           34 |           31 | Sales          |
+| Smith      |           34 |           33 | Engineering    |
+| Smith      |           34 |           34 | Clerical       |
+| Smith      |           34 |           35 | Marketing      |
+| Williams   |         NULL |           31 | Sales          |
+| Williams   |         NULL |           33 | Engineering    |
+| Williams   |         NULL |           34 | Clerical       |
+| Williams   |         NULL |           35 | Marketing      |
++------------+--------------+--------------+----------------+
+24 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+值得注意的是，上面的兩行SQL指令
+SELECT * FROM employee CROSS JOIN department;
+SELECT * FROM employee,department;
+產生了相同的結果
+第一句有顯式指定CROSS JOIN關鍵字
+第二句雖然沒有寫出CROSS JOIN關鍵字，但是執行結果和前面第一句有強調CROSS JOIN是一樣的
+指令產生的結果表格都是employee表格和department表格的笛卡兒乘積
+
