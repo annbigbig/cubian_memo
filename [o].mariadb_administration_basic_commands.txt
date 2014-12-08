@@ -1593,5 +1593,59 @@ MariaDB [testdb1]>
 好慘，看來是MariaDB不支援FULL OUTER JOIN語法的樣子
 有其他辦法可以得到FULL OUTER JOIN的運算結果嗎？
 
-我想繼續寫，可是我的啤酒時間到了，哈
+應該有，在得到FULL OUTER JOIN的運算結果之前
+請你作一件事，用union and intersection當作關鍵字
+然後使用Google的圖片搜尋，這樣你會立刻了解union和intersection的差別
+現在我假設你已經知道兩者的差異
+那麼在這裡我假設們所求的FULL OUTER JOIN的運算結果是F
+LEFT OUTER JOIN的運算結果是L
+RIGHT OUTER JOIN的運算結果是R
+那麼
+F = L UNION R
+
+這裡說些看起來毫無關係，卻又好像有關係的事情
+我突然想到一個應該算是數學題的問題
+有一個爸爸有10個小孩，其中7個數學及格，7個英文及格
+這個時候爸爸說了：如果你們其中有人數學和英文兩個科目都沒有及格
+那麼我就不發下個月的零用錢給這個不用功的孩子
+那麼請問這個爸爸下個月有可能要發給幾個孩子零用錢？
+答案是：7個或是8個或是9個或是10個孩子全發
+那麼為什麼？這和我們想知道的FULL OUTER JOIN的運算結果有關係嗎？
+
+Min:7個人
+領得到零用錢的孩子●●●●●●●○○○
+　英　文　及　格　●●●●●●●○○○
+　數　學　及　格　●●●●●●●○○○
+
+Max:10個人
+領得到零用錢的孩子●●●●●●●●●●
+　英　文　及　格　●●●●●●●○○○
+　數　學　及　格　○○○●●●●●●●
+
+我覺得這兩個概念很像，所以順便寫在這裡，
+我們直接來看在MariaDB裡，在不能直接支援FULL OUTER JOIN語法的情況下
+要怎麼產生結果同樣的result set比較直接
+
+MariaDB [testdb1]> SELECT * FROM employee LEFT OUTER JOIN department ON employee.DepartmentID = department.DepartmentID
+    -> UNION
+    -> SELECT * FROM employee RIGHT OUTER JOIN department ON employee.DepartmentID = department.DepartmentID;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Smith      |           34 |           34 | Clerical       |
+| Williams   |         NULL |         NULL | NULL           |
+| NULL       |         NULL |           35 | Marketing      |
++------------+--------------+--------------+----------------+
+7 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+即使MariaDB不支援FULL OUTER JOIN的語法
+我們還是可以利用UNION的概念，運算出FULL OUTER JOIN應該有的結果result set
+就是SQL指令寫長一點，感覺不是很優雅而已
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
