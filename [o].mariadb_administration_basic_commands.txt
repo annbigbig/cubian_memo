@@ -1520,6 +1520,8 @@ MariaDB [testdb1]> SELECT * FROM employee LEFT OUTER JOIN department ON employee
 +------------+--------------+--------------+----------------+
 6 rows in set (0.00 sec)
 
+MariaDB [testdb1]>
+
 而下面這個例子指定要完整保留所有部門記錄
 
 MariaDB [testdb1]> SELECT * FROM department LEFT OUTER JOIN employee ON department.DepartmentID = employee.DepartmentId;
@@ -1538,11 +1540,58 @@ MariaDB [testdb1]> SELECT * FROM department LEFT OUTER JOIN employee ON departme
 MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+32.OUTER JOIN (RIGHT OUTER JOIN)
 
+對，你發現了，LEFT OUTER JOIN和RIGHT OUTER JOIN只是方向不同
+下指令的時候，要保留的那個表格的位置是互相反過來的
+其他沒什麼不同，所以相較於前一個步驟，如果我們要運算結果完整保留所有的員工記錄，
+使用RIGHT OUTER JOIN我們就這樣子下指令：
 
+MariaDB [testdb1]> SELECT * FROM department RIGHT OUTER JOIN employee ON employee.DepartmentID = department.DepartmentID;
++--------------+----------------+------------+--------------+
+| DepartmentID | DepartmentName | LastName   | DepartmentID |
++--------------+----------------+------------+--------------+
+|           31 | Sales          | Rafferty   |           31 |
+|           33 | Engineering    | Jones      |           33 |
+|           33 | Engineering    | Heisenberg |           33 |
+|           34 | Clerical       | Robinson   |           34 |
+|           34 | Clerical       | Smith      |           34 |
+|         NULL | NULL           | Williams   |         NULL |
++--------------+----------------+------------+--------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb1]>
+
+那如果要保留的是所有的部門記錄呢？就這樣子下指令
+
+MariaDB [testdb1]> SELECT * FROM employee RIGHT OUTER JOIN department ON employee.DepartmentID = department.DepartmentID;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Smith      |           34 |           34 | Clerical       |
+| NULL       |         NULL |           35 | Marketing      |
++------------+--------------+--------------+----------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+33.OUTER JOIN (FULL OUTER JOIN)
 
+上面講的LEFT OUTER JOIN和RIGHT OUTER JOIN都只保證其中一個表格的記錄列一定會完整出現
+啊我如果兩個表格裡所有的記錄列，都至少要在運算結果的result set裡出現一次呢？
+然後我很快樂的執行了
 
+MariaDB [testdb1]> SELECT * FROM employee FULL OUTER JOIN department ON employee.DepartmentID = department.DepartmentID;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'OUTER JOIN department ON employee.DepartmentID = department.DepartmentID' at line 1
+MariaDB [testdb1]> 
 
+好慘，看來是MariaDB不支援FULL OUTER JOIN語法的樣子
+有其他辦法可以得到FULL OUTER JOIN的運算結果嗎？
+
+我想繼續寫，可是我的啤酒時間到了，哈
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
