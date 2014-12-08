@@ -48,9 +48,9 @@ o.MariaDB服務器管理基礎
 　　　28.產生演示所需要的兩個表格及資料
 　　　29.CROSS JOIN
 　　　30.INNER JOIN
-　　　31.OUTER JOIN (LEFT JOIN)
-　　　32.OUTER JOIN (RIGHT JOIN)
-　　　33.OUTER JOIN (FULL)
+　　　31.OUTER JOIN (LEFT OUTER JOIN)
+　　　32.OUTER JOIN (RIGHT OUTER JOIN)
+　　　33.OUTER JOIN (FULL OUTER JOIN)
 　　　34.SELF JOIN
 
 （備份及還原：backup and restore）
@@ -1438,11 +1438,48 @@ MariaDB [testdb1]> SELECT * FROM employee,department WHERE employee.DepartmentID
 +------------+--------------+--------------+----------------+
 5 rows in set (0.00 sec)
 
-MariaDB [testdb1]>
+SQL-92規範的用法
+注意在兩個表格裡用來JOIN的那個欄位必需有同樣的名稱（在這裡是DepartmentID）
+還有仔細觀察INNER JOIN運算後輸出的result set只有三個欄位，
+和上面兩個用法所產生的result set不同
+這個SQL指令只產生了一個DepartmentID欄位
 
-注意在employee表格裡的Williams那一個員工
+MariaDB [testdb1]> SELECT * FROM employee INNER JOIN department USING(DepartmentID);
++--------------+------------+----------------+
+| DepartmentID | LastName   | DepartmentName |
++--------------+------------+----------------+
+|           31 | Rafferty   | Sales          |
+|           33 | Jones      | Engineering    |
+|           33 | Heisenberg | Engineering    |
+|           34 | Robinson   | Clerical       |
+|           34 | Smith      | Clerical       |
++--------------+------------+----------------+
+5 rows in set (0.01 sec)
+
+Natural join用法
+（資料庫專家們不建議使用此方法，不顯式指定連接欄位的情況下，你有可能不小心使用了不想使用的欄位作連接）
+和上面SQL-92用法相同，一樣是參與INNER JOIN的兩個表格要有同樣名稱的欄位（DepartmentID）當作連接兩個表的欄位
+和SQL-92用法只有指令寫法上的差異，另外不必再顯式指定那個連接欄位DepartmentID（這就是它危險之處，由資料庫自行認定連接欄位）
+這個指令會自動比對兩個參加INNER JOIN運算的表格，找出相同名稱的欄位，自動當作連接兩個表的欄位
+如果參加INNER JOIN運算的兩個表格沒有共同名稱的欄位，則會執行CROSS JOIN
+
+MariaDB [testdb1]> SELECT * FROM employee NATURAL JOIN department;
++--------------+------------+----------------+
+| DepartmentID | LastName   | DepartmentName |
++--------------+------------+----------------+
+|           31 | Rafferty   | Sales          |
+|           33 | Jones      | Engineering    |
+|           33 | Heisenberg | Engineering    |
+|           34 | Robinson   | Clerical       |
+|           34 | Smith      | Clerical       |
++--------------+------------+----------------+
+5 rows in set (0.00 sec)
+
+MariaDB [testdb1]> 
+
+還有特別注意在employee表格裡的Williams那一個員工
 還有在department表格裡的Marketing這個部門
-完全沒有出現在上面的INNER JOIN結果表格中（無論是顯式或是隱式用法）
+完全沒有出現在上面的INNER JOIN結果表格中（無論是顯式或是隱式用法或SQL-92用法或Natural Join用法）
 這是因為員工Williams沒有DepartmentID
 而Marketing部門也沒有擁有任何員工（沒有任何DepartmentID為35的員工記錄存在）
 就如同前面我所說的，參與INNER JOIN運算的兩個表格裡
@@ -1452,8 +1489,53 @@ MariaDB [testdb1]>
 不然可能會寫出有bug的程式
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+31.OUTER JOIN (LEFT OUTER JOIN)
 
+剛才在上面INNER JOIN運算的時候，我們發現了在兩個參加運算的表格中
+只要是連接欄位（DepartmentID）為NULL的員工記錄，像是Williams
+或是沒有任何員工存在的部門記錄，像是DepartmentID欄位值為35的Marketing部門
+都不會出現在運算結果的result set裡
+那麼如果我們一定要運算結果result set裡面有所有員工記錄，不管那個員工有沒有被分類到某個部門
+（可能是第一天進公司報到的菜鳥，所以還沒有給他決定編制在那個部門）
+又或者反過來，我們一定要運算結果result set裡面必須有所有的部門記錄，不管這個部門裡面有沒有實質在工作的員工
+（可能是老板今天剛想到要成立品質保證部門，但是還沒有想到新部門裡面要有那些員工）
+又或者是我們希望無論如何，運算結果的result set都會有所有的員工和部門存在
+這個時候就要用到OUTER JOIN
+而OUTER JOIN可以再細分為只完整保存其中一個表格所有記錄列的LEFT OUTER JOIN和RIGHT OUTER JOIN
+還有無論如何運算結果都要保存兩個表格所有記錄列的FULL OUTER JOIN
 
+嘴砲打完了，現在先來看LEFT OUTER JOIN
+這個例子指定要完整保留所有員工記錄
+
+MariaDB [testdb1]> SELECT * FROM employee LEFT OUTER JOIN department ON employee.DepartmentID = department.DepartmentID;
++------------+--------------+--------------+----------------+
+| LastName   | DepartmentID | DepartmentID | DepartmentName |
++------------+--------------+--------------+----------------+
+| Rafferty   |           31 |           31 | Sales          |
+| Jones      |           33 |           33 | Engineering    |
+| Heisenberg |           33 |           33 | Engineering    |
+| Robinson   |           34 |           34 | Clerical       |
+| Smith      |           34 |           34 | Clerical       |
+| Williams   |         NULL |         NULL | NULL           |
++------------+--------------+--------------+----------------+
+6 rows in set (0.00 sec)
+
+而下面這個例子指定要完整保留所有部門記錄
+
+MariaDB [testdb1]> SELECT * FROM department LEFT OUTER JOIN employee ON department.DepartmentID = employee.DepartmentId;
++--------------+----------------+------------+--------------+
+| DepartmentID | DepartmentName | LastName   | DepartmentID |
++--------------+----------------+------------+--------------+
+|           31 | Sales          | Rafferty   |           31 |
+|           33 | Engineering    | Jones      |           33 |
+|           33 | Engineering    | Heisenberg |           33 |
+|           34 | Clerical       | Robinson   |           34 |
+|           34 | Clerical       | Smith      |           34 |
+|           35 | Marketing      | NULL       |         NULL |
++--------------+----------------+------------+--------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb1]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 
