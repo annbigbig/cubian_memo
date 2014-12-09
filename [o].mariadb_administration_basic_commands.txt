@@ -51,7 +51,8 @@ o.MariaDB服務器管理基礎
 　　　31.OUTER JOIN (LEFT OUTER JOIN)
 　　　32.OUTER JOIN (RIGHT OUTER JOIN)
 　　　33.OUTER JOIN (FULL OUTER JOIN)
-　　　34.SELF JOIN
+　　　34.產生演示SELF JOIN所需要的一個表格及資料
+　　　35.SELF JOIN
 
 （備份及還原：backup and restore）
 
@@ -1647,5 +1648,144 @@ MariaDB [testdb1]>
 即使MariaDB不支援FULL OUTER JOIN的語法
 我們還是可以利用UNION的概念，運算出FULL OUTER JOIN應該有的結果result set
 就是SQL指令寫長一點，感覺不是很優雅而已
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+34.產生演示SELF JOIN所需要的一個表格及資料
+
+緊接著應該要示範的是SELF JOIN才對
+可是要先產生適合示範用的表格和資料
+
+root@cubie:~# pwd
+/root
+root@cubie:~# ls
+data.sql  example.sql  mysql_client_settings.txt  sunxi-tools  vncpasswd
+root@cubie:~# cat ./data.sql
+CREATE TABLE tb_employee (
+id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(20) NOT NULL,
+country VARCHAR(20) NOT NULL,
+DepartmentID INT(11)
+);
+ 
+INSERT INTO tb_employee VALUES(123,'Rafferty','Australia',31);
+INSERT INTO tb_employee VALUES(124,'Jones','Australia',33);
+INSERT INTO tb_employee VALUES(145,'Heisenberg','Australia',33);
+INSERT INTO tb_employee VALUES(201,'Robinson','United States',34);
+INSERT INTO tb_employee VALUES(305,'Smith','Germany',34);
+INSERT INTO tb_employee VALUES(306,'Williams','Germany',NULL);
+root@cubie:~# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 6
+Server version: 10.0.14-MariaDB Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.01 sec)
+
+MariaDB [(none)]> USE testdb1;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| department        |
+| employee          |
++-------------------+
+2 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SOURCE /root/data.sql;
+Query OK, 0 rows affected (0.33 sec)
+
+Query OK, 1 row affected (0.05 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.09 sec)
+
+Query OK, 1 row affected (0.09 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+Query OK, 1 row affected (0.04 sec)
+
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| department        |
+| employee          |
+| tb_employee       |
++-------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [testdb1]> DESCRIBE tb_employee;
++--------------+-------------+------+-----+---------+----------------+
+| Field        | Type        | Null | Key | Default | Extra          |
++--------------+-------------+------+-----+---------+----------------+
+| id           | int(11)     | NO   | PRI | NULL    | auto_increment |
+| name         | varchar(20) | NO   |     | NULL    |                |
+| country      | varchar(20) | NO   |     | NULL    |                |
+| DepartmentID | int(11)     | YES  |     | NULL    |                |
++--------------+-------------+------+-----+---------+----------------+
+4 rows in set (0.01 sec)
+
+MariaDB [testdb1]> SELECT * FROM tb_employee;
++-----+------------+---------------+--------------+
+| id  | name       | country       | DepartmentID |
++-----+------------+---------------+--------------+
+| 123 | Rafferty   | Australia     |           31 |
+| 124 | Jones      | Australia     |           33 |
+| 145 | Heisenberg | Australia     |           33 |
+| 201 | Robinson   | United States |           34 |
+| 305 | Smith      | Germany       |           34 |
+| 306 | Williams   | Germany       |         NULL |
++-----+------------+---------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+35.SELF JOIN
+
+MariaDB [testdb1]> SELECT f.id,f.name,s.id,s.name,f.country
+    -> FROM tb_employee f INNER JOIN tb_employee s ON f.country = s.country
+    -> WHERE f.id < s.id
+    -> ORDER BY f.id,s.id;
++-----+----------+-----+------------+-----------+
+| id  | name     | id  | name       | country   |
++-----+----------+-----+------------+-----------+
+| 123 | Rafferty | 124 | Jones      | Australia |
+| 123 | Rafferty | 145 | Heisenberg | Australia |
+| 124 | Jones    | 145 | Heisenberg | Australia |
+| 305 | Smith    | 306 | Williams   | Germany   |
++-----+----------+-----+------------+-----------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb1]>
+
+只要兩個員工的country欄位值相同（兩個人來自相同的國家）
+結果的result set就會包含以這兩個員工的id和name欄位值，再加上他們相同的country欄位值所產生的一條記錄列
+和上面其他JOIN方式不同的是，這裡參加SELF JOIN運算的只有一個表格的資料
+這個tb_employee分別被取了兩個alias別名，一個叫f一個叫s（first & second）
+雖然指令裡還是覺得有兩個表格在參與運算，但是實際上只有一個表格的資料
+還有使用了WHERE f.id < s.id是為了消除重複的配對記錄
+你可以把WHERE f.id < s.id的部分故意省略不打，再執行一次SQL指令看看
+你就會立刻了解到它的作用了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
