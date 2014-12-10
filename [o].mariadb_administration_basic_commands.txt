@@ -260,8 +260,9 @@ Connection parameters are correct
 SSL not enabled
                                    [ OK ]
 
-按下OK，再按下Manage Server Connections對話框右下角的CLOSE關掉該對話框
-現在回到MySQL Workbench首頁，你已經連到Cubian上面運行的MariaDB服務器了
+按下OK，再按下Manage Server Connections對話框右下角的Close關掉該對話框
+現在回到MySQL Workbench首頁，按下我們剛才新增的連線MariaDB_on_cubie，
+按下Continue Anyway按鈕，你已經連到Cubian上面運行的MariaDB服務器了
 接下來就是嗡嗡嗡了…
 
 （提示：在CubieTruck機器上，我的MariaDB還是一樣運行在127.0.0.1的3306端口）
@@ -523,12 +524,27 @@ MariaDB [(none)]> SHOW GRANTS FOR 'chakra'@'%';
 +-------------------------------------------------------------------------------------------------------+
 2 rows in set (0.00 sec)
 
-結果授權成功，然後得到一個小結論
+結果授權成功，然後得到兩個小結論
+（一）
 如果資料庫testdb3不存在（當然也不存在裡面的staff資料表）
 下面這一行的授權指令還是會成功
 GRANT SELECT ON testdb3.* TO 'chakra'@'%' WITH GRANT OPTION;
 但是下面這一行會執行失敗，和上面那一行指令差別在於：這裡完整的敘述了一個不存在資料表staff的名字
 GRANT SELECT ON testdb3.staff TO 'chakra'@'%' WITH GRANT OPTION;
+
+（二）
+值得注意的是，如果要在資料庫服務器上產生一個超級使用者
+在這裡我假設這個用戶的名字是tony
+那麼你必須要讓
+tony@localhost
+tony@127.0.0.1
+這兩個用戶同時存在，而且最好是讓他們兩個持有一模一樣的密碼
+然後再使用
+GRANT ALL ON *.* TO 'tony'@'localhost' WITH GRANT OPTION;
+GRANT ALL ON *.* TO 'tony'@'127.0.0.1' WITH GRANT OPTION;
+為這兩個用戶授權
+tony@localhost是在Cubian本機上的MariaDB服務器的command line client使用的
+tony@127.0.0.1是給異地機器SSH登入Cubian機器後再連到MariaDB服務器的程式，像是MySQL workbench使用的
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 11.收回權限
@@ -660,6 +676,30 @@ MariaDB [mysql]> SHOW GRANTS FOR 'jojo'@'192.168.0.%';
 | GRANT SELECT, INSERT ON `testdb1`.* TO 'jojo'@'192.168.0.%'                                                   |
 +---------------------------------------------------------------------------------------------------------------+
 2 rows in set (0.00 sec)
+
+收回tony@localhost的全部權限，他將不再是超級使用者，只是一個除了登入什麼權限都沒有的用戶
+注意這裡使用的REVOKE指令，和上面不同的地方是沒有指定資料庫名.表格名
+
+MariaDB [mysql]> SHOW GRANTS FOR 'tony'@'localhost';
++----------------------------------------------------------------------------------------------------------------------------------------+
+| Grants for tony@localhost                                                                                                              |
++----------------------------------------------------------------------------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'tony'@'localhost' IDENTIFIED BY PASSWORD '*5938568D06F7260E41353CAB3E9B305CAC18570C' WITH GRANT OPTION |
++----------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [mysql]> REVOKE ALL,GRANT OPTION FROM 'tony'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'tony'@'localhost';
++-------------------------------------------------------------------------------------------------------------+
+| Grants for tony@localhost                                                                                   |
++-------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'tony'@'localhost' IDENTIFIED BY PASSWORD '*5938568D06F7260E41353CAB3E9B305CAC18570C' |
++-------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [mysql]>
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 12.刪除用戶
