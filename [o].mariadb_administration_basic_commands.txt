@@ -1,4 +1,4 @@
-（持續更新中…請過幾天後再來…因為我還在整理）
+（持續更新中…）
 
 o.MariaDB服務器管理基礎
 
@@ -60,6 +60,8 @@ o.MariaDB服務器管理基礎
 （備份及還原：backup and restore）
 
 （抄寫 : replication from master）
+
+（關於那些我沒寫進來的東西：）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.查看mysqld運行狀態
@@ -137,6 +139,56 @@ socket檔路徑
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 4.啟用binary log並檢視它
 
+啟用binary log的設定一樣放在/etc/my.cnf設定檔裡
+要寫在[mysqld]區塊裡
+只有一行
+log_bin = /srv/mysql/mariadb-binary-logs
+
+啟動MariaDB服務器之後
+這些binary logs檔案會被存成
+/srv/mysql/mariadb-binary-logs.000001
+/srv/mysql/mariadb-binary-logs.000002
+/srv/mysql/mariadb-binary-logs.000003
+這樣子的binary檔案，檔案後面的六位數的數字會一直累加，數字愈大是愈新的記錄檔
+如果要查看它們的內容，不能使用vi文字編輯器
+因為它們是二進制檔
+所以請這樣查看它們
+
+root@cubie:/srv/mysql# pwd
+/srv/mysql
+root@cubie:/srv/mysql# ls -al|grep binary
+-rw-rw---- 1 mysql mysql      341 12月 10 18:00 mariadb-binary-logs.000001
+-rw-rw---- 1 mysql mysql      341 12月 10 18:36 mariadb-binary-logs.000002
+-rw-rw---- 1 mysql mysql      322 12月 10 23:30 mariadb-binary-logs.000003
+-rw-rw---- 1 mysql mysql      114 12月 10 23:30 mariadb-binary-logs.index
+root@cubie:/srv/mysql# which mysqlbinlog
+/usr/local/mariadb/bin/mysqlbinlog
+root@cubie:/srv/mysql# mysqlbinlog ./mariadb-binary-logs.000003
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!40019 SET @@session.max_insert_delayed_threads=0*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+# at 4
+#141210 23:30:01 server id 1  end_log_pos 248 	Start: binlog v 4, server v 10.0.14-MariaDB-log created 141210 23:30:01 at startup
+# Warning: this binlog is either in use or was not closed properly.
+ROLLBACK/*!*/;
+BINLOG '
++WaIVA8BAAAA9AAAAPgAAAABAAQAMTAuMC4xNC1NYXJpYURCLWxvZwAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAD5ZohUEzgNAAgAEgAEBAQEEgAA3AAEGggAAAAICAgCAAAACgoKAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAEEwQAFOdI7g==
+'/*!*/;
+# at 248
+#141210 23:30:01 server id 1  end_log_pos 273 	Gtid list []
+# at 273
+#141210 23:30:01 server id 1  end_log_pos 322 	Binlog checkpoint mariadb-binary-logs.000003
+DELIMITER ;
+# End of log file
+ROLLBACK /* added by mysqlbinlog */;
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+root@cubie:/srv/mysql#
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 5.utf8問題
@@ -277,7 +329,7 @@ http://dev.mysql.com/downloads/workbench/
 安裝完成之後，可以在桌面左下的Menu > 軟體開發 > MySQL Workbench找到它
 在打開MySQL Workbench之前，請先在MariaDB服務器這裡
 新增tony@127.0.0.1這個用戶，並將他變成超級使用者
-（請參考本筆記的步驟9.新增用戶和步驟10.給予權限，這裡不再重複寫一樣的事）
+（請參考本筆記的步驟11.新增用戶和步驟12.給予權限，這裡不再重複寫一樣的事）
 
 進入MySQL Workbench之後，可以在最上面的功能選單的Database > Manage Connections...
 然後跳出了Manage Server Connections對話框，
