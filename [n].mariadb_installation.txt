@@ -79,18 +79,20 @@ http://www.linuxfromscratch.org/blfs/view/svn/server/mariadb.html
 # vi /etc/my.cnf
 
 內容如下：
-# Begin /etc/my.cnf
+### Begin /etc/my.cnf
 
 # The following options will be passed to all MySQL clients
 [client]
 #password       = your_password
 port            = 3306
 socket          = /run/mysqld/mysqld.sock
-default-character-set=utf8
+# this variable below is deprecated from mysql 5.0 and shouldn't be enabled
+# default-character-set=utf8
 
 # The MySQL server
 [mysqld]
 bind-address    = 127.0.0.1
+#bind-address    = 192.168.0.160
 port            = 3306
 socket          = /run/mysqld/mysqld.sock
 datadir         = /srv/mysql
@@ -129,9 +131,20 @@ server-id       = 1
 skip-name-resolv=1
 
 # charset utf8
-collation-server = utf8_unicode_ci
-init-connect='SET NAMES utf8'
-character-set-server = utf8
+# --- my earier settings ---
+#collation-server = utf8_unicode_ci
+#init-connect='SET NAMES utf8'
+#character-set-server = utf8
+# --- utf8 settings begin ---
+init_connect=‘SET collation_connection = utf8_unicode_ci’
+init_connect=‘SET NAMES utf8’
+character-set-server=utf8
+collation-server=utf8_unicode_ci
+skip-character-set-client-handshake
+# --- utf8 settings end ---
+
+# enable binary log files
+log_bin = /srv/mysql/mariadb-binary-logs
 
 [mysqldump]
 quick
@@ -141,7 +154,8 @@ max_allowed_packet = 16M
 no-auto-rehash
 # Remove the next comment character if you are not familiar with SQL
 #safe-updates
-default-character-set=utf8
+# this variable below is deprecated from mysql 5.0 and shouldn't be enabled
+# default-character-set=utf8
 
 [isamchk]
 key_buffer = 20M
