@@ -5,7 +5,7 @@ o.MariaDB服務器管理基礎
 大綱：
 （服務器 : server daemon related）
 　　　1.查看mysqld運行狀態
-　　　2.啟動、重啟、停止、重載mysqld
+　　　2.啟動、重啟、停止、重載mysqld、設定檔語法測試
 　　　3.重要檔案及目錄的路徑
 　　　4.啟用binary log並檢視它
 　　　5.utf8問題
@@ -124,7 +124,7 @@ init script啟動腳本
 /etc/init.d/mysql
 
 log檔
-/srv/mysql/<HOSTNAME>.err
+/srv/mysql/error.log
 
 編譯時留下的
 /usr/local/src/mariadb-10.0.14/support-files目錄裡

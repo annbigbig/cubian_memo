@@ -143,6 +143,9 @@ collation-server=utf8_unicode_ci
 skip-character-set-client-handshake
 # --- utf8 settings end ---
 
+# explicitly set the path of the error log file
+log_error = /srv/mysql/error.log
+
 # enable binary log files
 log_bin = /srv/mysql/mariadb-binary-logs
 
