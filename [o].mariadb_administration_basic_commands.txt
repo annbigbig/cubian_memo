@@ -112,19 +112,47 @@ Symbolic Link指向上面的安裝目錄
 如果以後有什麼指令問你--basedir在那裡，那麼回答上面兩個路徑的任何一個都可以
 而--datadir是系統放置所有資料庫的目錄，在/srv/mysql
 
-設定檔
-/etc/my.cnf
+========== 設定檔/etc/my.cnf及裡面值得關注的設定值 begin here ==========
 
 如果要mysqld運行於不同的IP或是TCP port
 就修改/etc/my.cnf設定檔裡的
 bind-address    = 127.0.0.1
 port            = 3306
 
-init script啟動腳本
-/etc/init.d/mysql
+在/etc/my.cnf的[mysqld]區塊
+還可以設定log檔的位置，包括
 
-log檔
-/srv/mysql/error.log
+log_error的設定如果完全沒有出現在/etc/my.cnf裡
+記錄檔預設還是會寫在/srv/mysql/<HOSTNAME>.err
+這個log檔是關不掉的，如果MariaDB服務器有什麼問題
+你第一個該看的就是這個檔案
+log_error = /srv/mysql/error.log
+
+這個是general_log，沒什麼事的話不用打開
+它比binary log更囉嗦，就算沒有更新資料庫裡的任何記錄列
+只是SELECT資料，general_log一樣會忠實記錄下來
+打開它的原因，是為了優化資料庫的效能
+庇如分析每天的general_log看看是不是有同樣的SELECT query一直重複被執行
+如果是這樣，那麼那一條重複的SELECT產生的結果
+是不是考慮要放到cache裡，然後設個expire time例如60秒之內都讓用戶去讀快取裡的資料，別來煩MariaDB服務器
+general_log = 1
+general_log_file = /srv/mysql/general.log
+
+然後這個是slow log的設定
+如果某個query會超過我這裡設定的時間0.05秒，那麼我就當它是個龜速的query
+請記錄下來，但是我又擔心重複的記錄太多，很快就把硬碟塞爆
+所以我在這裡設定同樣的記錄只記錄30分之1，每30條同樣的記1條就夠了
+最後一個log_slow_verbosity是設定要記錄下什麼資訊
+slow_query_log=1
+slow_query_log_file=/srv/mysql/mariadb-slow.log
+long_query_time=0.05
+log_slow_rate_limit=30
+log_slow_verbosity=query_plan,innodb,explain
+
+========== 設定檔/etc/my.cnf及裡面值得關注的設定值 end here ==========
+
+init script啟動腳本的路徑
+/etc/init.d/mysql
 
 編譯時留下的
 /usr/local/src/mariadb-10.0.14/support-files目錄裡

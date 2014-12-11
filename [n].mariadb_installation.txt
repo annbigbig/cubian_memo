@@ -149,6 +149,19 @@ log_error = /srv/mysql/error.log
 # enable binary log files
 log_bin = /srv/mysql/mariadb-binary-logs
 
+# if you turn on general_log
+# every query MariaDB receives will produce a record in specified log file
+# don't uncomment this unless you want to find performance bottleneck out
+#general_log = 1
+#general_log_file = /srv/mysql/general.log
+
+# use slow_query_log to find the queries that spent too much time
+slow_query_log=1
+slow_query_log_file=/srv/mysql/mariadb-slow.log
+long_query_time=0.05
+log_slow_rate_limit=30
+log_slow_verbosity=query_plan,innodb,explain
+
 [mysqldump]
 quick
 max_allowed_packet = 16M
