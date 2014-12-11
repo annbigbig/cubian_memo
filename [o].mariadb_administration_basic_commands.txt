@@ -58,6 +58,8 @@ o.MariaDB服務器管理基礎
 　　　38.SELF JOIN
 
 （備份及還原：backup and restore）
+　　　39.備份
+　　　40.還原
 
 （抄寫 : replication from master）
 
@@ -2127,5 +2129,338 @@ MariaDB [testdb1]>
 還有使用了WHERE f.id < s.id是為了消除重複的配對記錄或是員工自已與自已配對的記錄（exclude duplicate pairings and self-pairings）
 你可以把WHERE f.id < s.id的部分故意省略不打，再執行一次SQL指令看看
 你就會立刻了解到它的作用了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+39.備份
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> USE testdb1;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [testdb1]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb1 |
++-------------------+
+| department        |
+| employee          |
+| tb_employee       |
++-------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM department;
++--------------+----------------+
+| DepartmentID | DepartmentName |
++--------------+----------------+
+|           31 | Sales          |
+|           33 | Engineering    |
+|           34 | Clerical       |
+|           35 | Marketing      |
++--------------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM employee;
++------------+--------------+
+| LastName   | DepartmentID |
++------------+--------------+
+| Rafferty   |           31 |
+| Jones      |           33 |
+| Heisenberg |           33 |
+| Robinson   |           34 |
+| Smith      |           34 |
+| Williams   |         NULL |
++------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb1]> SELECT * FROM tb_employee;
++-----+------------+---------------+--------------+
+| id  | name       | country       | DepartmentID |
++-----+------------+---------------+--------------+
+| 123 | Rafferty   | Australia     |           31 |
+| 124 | Jones      | Australia     |           33 |
+| 145 | Heisenberg | Australia     |           33 |
+| 201 | Robinson   | United States |           34 |
+| 305 | Smith      | Germany       |           34 |
+| 306 | Williams   | Germany       |         NULL |
++-----+------------+---------------+--------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb1]> exit
+Bye
+root@cubie:~# which mysqldump
+/usr/local/mariadb/bin/mysqldump
+root@cubie:~# pwd
+/root
+root@cubie:~# mysqldump -u root -p testdb1 > testdb1.sql
+Enter password: 
+root@cubie:~# ls -al|grep testdb1
+-rw-r--r--  1 root root  3755 12月 11 23:15 testdb1.sql
+root@cubie:~# cat ./testdb1.sql
+-- MySQL dump 10.15  Distrib 10.0.14-MariaDB, for Linux (armv7l)
+--
+-- Host: localhost    Database: testdb1
+-- ------------------------------------------------------
+-- Server version	10.0.14-MariaDB-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `department`
+--
+
+DROP TABLE IF EXISTS `department`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `department` (
+  `DepartmentID` int(11) DEFAULT NULL,
+  `DepartmentName` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `department`
+--
+
+LOCK TABLES `department` WRITE;
+/*!40000 ALTER TABLE `department` DISABLE KEYS */;
+INSERT INTO `department` VALUES (31,'Sales'),(33,'Engineering'),(34,'Clerical'),(35,'Marketing');
+/*!40000 ALTER TABLE `department` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `employee`
+--
+
+DROP TABLE IF EXISTS `employee`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `employee` (
+  `LastName` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `DepartmentID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `employee`
+--
+
+LOCK TABLES `employee` WRITE;
+/*!40000 ALTER TABLE `employee` DISABLE KEYS */;
+INSERT INTO `employee` VALUES ('Rafferty',31),('Jones',33),('Heisenberg',33),('Robinson',34),('Smith',34),('Williams',NULL);
+/*!40000 ALTER TABLE `employee` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tb_employee`
+--
+
+DROP TABLE IF EXISTS `tb_employee`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tb_employee` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `country` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `DepartmentID` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=307 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tb_employee`
+--
+
+LOCK TABLES `tb_employee` WRITE;
+/*!40000 ALTER TABLE `tb_employee` DISABLE KEYS */;
+INSERT INTO `tb_employee` VALUES (123,'Rafferty','Australia',31),(124,'Jones','Australia',33),(145,'Heisenberg','Australia',33),(201,'Robinson','United States',34),(305,'Smith','Germany',34),(306,'Williams','Germany',NULL);
+/*!40000 ALTER TABLE `tb_employee` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2014-12-11 23:15:20
+root@cubie:~# 
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+40.還原
+
+先把舊的testdb1資料庫整個殺掉
+然後建立一個新的空白的testdb2資料庫
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb1            |
++--------------------+
+4 rows in set (0.01 sec)
+
+MariaDB [(none)]> DROP DATABASE testdb1;
+Query OK, 3 rows affected (0.47 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> CREATE DATABASE testdb2;
+Query OK, 1 row affected (0.00 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb2            |
++--------------------+
+4 rows in set (0.01 sec)
+
+MariaDB [(none)]> exit
+Bye
+root@cubie:~# 
+
+然後用上一個步驟備份的testdb1.sql來還原到剛才建立的空白的testdb2資料庫
+root@cubie:~# pwd
+/root
+root@cubie:~# ls -al|grep testdb1
+-rw-r--r--  1 root root  3755 12月 11 23:15 testdb1.sql
+root@cubie:~# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:~# mysql -u root -p testdb2 < /root/testdb1.sql
+Enter password: 
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 12
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb2            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> USE testdb2;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [testdb2]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb2 |
++-------------------+
+| department        |
+| employee          |
+| tb_employee       |
++-------------------+
+3 rows in set (0.01 sec)
+
+MariaDB [testdb2]> SELECT * FROM department;
++--------------+----------------+
+| DepartmentID | DepartmentName |
++--------------+----------------+
+|           31 | Sales          |
+|           33 | Engineering    |
+|           34 | Clerical       |
+|           35 | Marketing      |
++--------------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb2]> SELECT * FROM employee;
++------------+--------------+
+| LastName   | DepartmentID |
++------------+--------------+
+| Rafferty   |           31 |
+| Jones      |           33 |
+| Heisenberg |           33 |
+| Robinson   |           34 |
+| Smith      |           34 |
+| Williams   |         NULL |
++------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb2]> SELECT * FROM tb_employee;
++-----+------------+---------------+--------------+
+| id  | name       | country       | DepartmentID |
++-----+------------+---------------+--------------+
+| 123 | Rafferty   | Australia     |           31 |
+| 124 | Jones      | Australia     |           33 |
+| 145 | Heisenberg | Australia     |           33 |
+| 201 | Robinson   | United States |           34 |
+| 305 | Smith      | Germany       |           34 |
+| 306 | Williams   | Germany       |         NULL |
++-----+------------+---------------+--------------+
+6 rows in set (0.00 sec)
+
+MariaDB [testdb2]>
+
+這篇筆記裡介紹的備份和還原
+是很粗糙的方式
+整個資料庫都完整備份
+然後整個資料庫都從無到有完整還原的Full backup
+實際上備份策略還可以有
+incremental backup
+Differential backup
+然後我又搜了一下wiki關於備份的頁面
+總之可以參考的資料這裡還有很多
+
+增量備份
+http://en.wikipedia.org/wiki/Incremental_backup
+
+差異備份
+http://en.wikipedia.org/wiki/Differential_backup
+
+這篇一定要點進去看，裡面有很多高深的我第一次看到的關於備份的新詞彙
+http://en.wikipedia.org/wiki/Backup
+
+本人知識水平有限，仍在學習中
+有興趣的朋友可以自行研究上面參考資料寫的備份策略
+這裡只是簡單給個方向
+將來我學會了，我會把它寫進來的
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
