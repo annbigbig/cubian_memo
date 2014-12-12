@@ -58,10 +58,14 @@ o.MariaDB服務器管理基礎
 　　　38.SELF JOIN
 
 （備份及還原：backup and restore）
-　　　39.備份
-　　　40.還原
+　　　39.備份（一）表格定義和資料全都備份到xxx.sql檔案裡
+　　　40.還原（一）從剛才產生的xxx.sql檔案還原資料
+　　　41.備份（二）表格定義備份到table-name.sql而資料備份到table-name.txt
+　　　42.還原（二）從剛才產生的table-name.sql和table-name.txt還原資料
+　　　43.備份與還原不只是這樣
 
 （抄寫 : replication from master）
+　　　44.抄寫
 
 （關於那些我沒寫進來的東西：）
 
@@ -2131,7 +2135,7 @@ MariaDB [testdb1]>
 你就會立刻了解到它的作用了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-39.備份
+39.備份（一）表格定義和資料全都備份到xxx.sql檔案裡
 
 MariaDB [(none)]> SHOW DATABASES;
 +--------------------+
@@ -2309,7 +2313,7 @@ UNLOCK TABLES;
 root@cubie:~# 
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-40.還原
+40.還原（一）從剛才產生的xxx.sql檔案還原資料
 
 先把舊的testdb1資料庫整個殺掉
 然後建立一個新的空白的testdb2資料庫
@@ -2439,10 +2443,340 @@ MariaDB [testdb2]> SELECT * FROM tb_employee;
 
 MariaDB [testdb2]>
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+41.備份（二）表格定義備份到table-name.sql而資料備份到table-name.txt
+
+MariaDB [testdb2]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb2 |
++-------------------+
+| department        |
+| employee          |
+| tb_employee       |
++-------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [testdb2]> exit
+Bye
+root@cubie:/tmp# pwd
+/tmp
+root@cubie:/tmp# which mysqldump
+/usr/local/mariadb/bin/mysqldump
+root@cubie:/tmp# mysqldump --tab /tmp -u root -p testdb2
+Enter password: 
+root@cubie:/tmp# ls -al
+總計 40
+drwxrwxrwt  6 root  root   280 12月 12 20:23 .
+drwxr-xr-x 24 root  root  4096 11月 25 22:34 ..
+-rw-r--r--  1 root  root  1434 12月 12 20:23 department.sql
+-rw-rw-rw-  1 mysql mysql   49 12月 12 20:23 department.txt
+-rw-r--r--  1 root  root  1422 12月 12 20:23 employee.sql
+-rw-rw-rw-  1 mysql mysql   68 12月 12 20:23 employee.txt
+drwx------  2 cubie cubie   60 12月 12 15:07 gcin-cubie
+drwxrwxrwt  2 root  root    60 12月 12 15:07 .ICE-unix
+drwx------  2 cubie cubie   60 12月 12 15:07 ssh-nSHpLr137jzY
+-rw-r--r--  1 root  root  1562 12月 12 20:23 tb_employee.sql
+-rw-rw-rw-  1 mysql mysql  152 12月 12 20:23 tb_employee.txt
+-r--r--r--  1 root  root    11 12月 12 15:07 .X0-lock
+drwxrwxrwt  2 root  root    60 12月 12 15:07 .X11-unix
+-rw-r--r--  1 root  root  4777 12月 12 15:07 x11vnc.log
+root@cubie:/tmp# cat ./department.sql
+-- MySQL dump 10.15  Distrib 10.0.14-MariaDB, for Linux (armv7l)
+--
+-- Host: localhost    Database: testdb2
+-- ------------------------------------------------------
+-- Server version	10.0.14-MariaDB-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `department`
+--
+
+DROP TABLE IF EXISTS `department`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `department` (
+  `DepartmentID` int(11) DEFAULT NULL,
+  `DepartmentName` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2014-12-12 20:23:52
+root@cubie:/tmp# cat ./employee.sql
+-- MySQL dump 10.15  Distrib 10.0.14-MariaDB, for Linux (armv7l)
+--
+-- Host: localhost    Database: testdb2
+-- ------------------------------------------------------
+-- Server version	10.0.14-MariaDB-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `employee`
+--
+
+DROP TABLE IF EXISTS `employee`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `employee` (
+  `LastName` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `DepartmentID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2014-12-12 20:23:52
+root@cubie:/tmp# cat ./tb_employee.sql
+-- MySQL dump 10.15  Distrib 10.0.14-MariaDB, for Linux (armv7l)
+--
+-- Host: localhost    Database: testdb2
+-- ------------------------------------------------------
+-- Server version	10.0.14-MariaDB-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `tb_employee`
+--
+
+DROP TABLE IF EXISTS `tb_employee`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tb_employee` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `country` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `DepartmentID` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=307 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2014-12-12 20:23:52
+root@cubie:/tmp# cat ./department.txt
+31	Sales
+33	Engineering
+34	Clerical
+35	Marketing
+root@cubie:/tmp# cat ./employee.txt
+Rafferty	31
+Jones	33
+Heisenberg	33
+Robinson	34
+Smith	34
+Williams	\N
+root@cubie:/tmp# cat ./tb_employee.txt
+123	Rafferty	Australia	31
+124	Jones	Australia	33
+145	Heisenberg	Australia	33
+201	Robinson	United States	34
+305	Smith	Germany	34
+306	Williams	Germany	\N
+root@cubie:/tmp# 
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+42.還原（二）從剛才產生的table-name.sql和table-name.txt還原資料
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb2            |
++--------------------+
+4 rows in set (0.01 sec)
+
+MariaDB [(none)]> DROP DATABASE testdb2;
+Query OK, 0 rows affected (0.01 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> CREATE DATABASE testdb3;
+Query OK, 1 row affected (0.01 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb3            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> USE testdb3;
+Database changed
+MariaDB [testdb3]> SHOW TABLES;
+Empty set (0.00 sec)
+
+MariaDB [testdb3]> EXIT
+Bye
+root@cubie:/tmp# pwd
+/tmp
+root@cubie:/tmp# ls -al|grep sql
+-rw-r--r--  1 root  root  1434 12月 12 20:23 department.sql
+-rw-rw-rw-  1 mysql mysql   49 12月 12 20:23 department.txt
+-rw-r--r--  1 root  root  1422 12月 12 20:23 employee.sql
+-rw-rw-rw-  1 mysql mysql   68 12月 12 20:23 employee.txt
+-rw-r--r--  1 root  root  1562 12月 12 20:23 tb_employee.sql
+-rw-rw-rw-  1 mysql mysql  152 12月 12 20:23 tb_employee.txt
+root@cubie:/tmp# which mysql
+/usr/local/mariadb/bin/mysql
+root@cubie:/tmp# mysql -u root -p testdb3 < department.sql
+Enter password: 
+root@cubie:/tmp# mysql -u root -p testdb3 < employee.sql
+Enter password: 
+root@cubie:/tmp# mysql -u root -p testdb3 < tb_employee.sql
+Enter password: 
+root@cubie:/tmp# which mysqlimport
+/usr/local/mariadb/bin/mysqlimport
+root@cubie:/tmp# mysqlimport --local -u root -p testdb3 /tmp/department.txt
+Enter password: 
+testdb3.department: Records: 4  Deleted: 0  Skipped: 0  Warnings: 0
+root@cubie:/tmp# mysqlimport --local -u root -p testdb3 /tmp/employee.txt
+Enter password: 
+testdb3.employee: Records: 6  Deleted: 0  Skipped: 0  Warnings: 0
+root@cubie:/tmp# mysqlimport --local -u root -p testdb3 /tmp/tb_employee.txt
+Enter password: 
+testdb3.tb_employee: Records: 6  Deleted: 0  Skipped: 0  Warnings: 0
+root@cubie:/tmp# mysql --defaults-file=/root/mysql_client_settings.txt
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 22
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb3            |
++--------------------+
+4 rows in set (0.00 sec)
+
+MariaDB [(none)]> USE testdb3;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [testdb3]> SHOW TABLES;
++-------------------+
+| Tables_in_testdb3 |
++-------------------+
+| department        |
+| employee          |
+| tb_employee       |
++-------------------+
+3 rows in set (0.00 sec)
+
+MariaDB [testdb3]> SELECT * FROM department;
++--------------+----------------+
+| DepartmentID | DepartmentName |
++--------------+----------------+
+|           31 | Sales          |
+|           33 | Engineering    |
+|           34 | Clerical       |
+|           35 | Marketing      |
++--------------+----------------+
+4 rows in set (0.00 sec)
+
+MariaDB [testdb3]> SELECT * FROM employee;
++------------+--------------+
+| LastName   | DepartmentID |
++------------+--------------+
+| Rafferty   |           31 |
+| Jones      |           33 |
+| Heisenberg |           33 |
+| Robinson   |           34 |
+| Smith      |           34 |
+| Williams   |         NULL |
++------------+--------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb3]> SELECT * FROM tb_employee;
++-----+------------+---------------+--------------+
+| id  | name       | country       | DepartmentID |
++-----+------------+---------------+--------------+
+| 123 | Rafferty   | Australia     |           31 |
+| 124 | Jones      | Australia     |           33 |
+| 145 | Heisenberg | Australia     |           33 |
+| 201 | Robinson   | United States |           34 |
+| 305 | Smith      | Germany       |           34 |
+| 306 | Williams   | Germany       |         NULL |
++-----+------------+---------------+--------------+
+6 rows in set (0.01 sec)
+
+MariaDB [testdb3]>
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+43.備份與還原不只是這樣
+
 這篇筆記裡介紹的備份和還原
 是很粗糙的方式
 整個資料庫都完整備份
 然後整個資料庫都從無到有完整還原的Full backup
+而且備份後的資料和正在運行的MariaDB資料庫還是同一台機器上的同一顆硬碟裡
+（糟，你看看這有多粗糙，那顆硬碟要是掛了，等於完全沒備份）
 實際上備份策略還可以有
 incremental backup
 Differential backup
@@ -2458,9 +2792,31 @@ http://en.wikipedia.org/wiki/Differential_backup
 這篇一定要點進去看，裡面有很多高深的我第一次看到的關於備份的新詞彙
 http://en.wikipedia.org/wiki/Backup
 
+用這個當關鍵字，Google搜尋一下
+guide to backup technologies mariadb white paper
+這篇也寫了好多東西
+
 本人知識水平有限，仍在學習中
 有興趣的朋友可以自行研究上面參考資料寫的備份策略
 這裡只是簡單給個方向
 將來我學會了，我會把它寫進來的
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+44.抄寫
+
+我稍微找了一下資料，抄寫好像要用到兩台MariaDB服務器
+但是我現在只有一台，也就是安裝在CubieTruck的這一台
+所以各位親愛的朋友們，不好意思，非常對不起
+我要先去弄出另一台機器來，才能再繼續我的筆記了
+比較有可能是直接在我另一個Banana Pi開發板安裝上MariaDB
+還有我必須去找一本新的MariaDB教學書籍來繼續吸收新東西
+所以我可能要暫時停止更新這個repo，大概…呃…至少兩個或三個星期以上
+這個repo其實是我閱讀了Getting Started with MariaDB這本書之後的讀書心得
+如果有朋友可以看到這裡
+非常感謝您這麼捧場給我支持
+這幾乎是想到什麼就寫什麼，亂寫一通而且80%以上都是終端機輸出的筆記
+祝您平安順心，那麼先這樣，小弟先繼續剩下的工作了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
