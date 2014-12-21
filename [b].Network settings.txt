@@ -125,7 +125,7 @@ $iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
 $iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
 $iptables -t filter -A INPUT -d $local -p tcp --dport 36000 -j ACCEPT
 $iptables -t filter -A INPUT -d $local -p tcp --dport 80 -j ACCEPT
-$iptables -t filter -A INPUT -s $lan -d 192.168.0.160 -p icmp -j ACCEPT
+$iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
 $iptables -t filter -P INPUT DROP
 $iptables -t filter -L -n --line-number
 # =================================================================================================
