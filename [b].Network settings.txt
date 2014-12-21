@@ -1,4 +1,4 @@
-b.設定網路參數
+b.設定網路參數 + 啟用iptables本機防火牆規則
 
 把Cubian的Image檔刷進MicroSD卡之後，第一次開機會進入cubian-config設定介面
 在這裡可以設定預設使用者cubie的密碼、locale、timezone、keyboard layout
@@ -73,3 +73,104 @@ YOUR_WIFI_PASSWORD_HERE則是換成你家無線網路的密碼
 127.0.0.1 cubie
 
 除了登入用戶名稱是cubie之外，我的主機名稱也叫cubie
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+ 啟用iptables本機防火牆規則
+
+開機的時候要自動載入ip_tables模組
+修改/etc/modules
+# vi /etc/modules
+
+在這裡列出我的完整的/etc/modules
+如下
+# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with "#" are ignored.
+# Parameters can be specified after the module name.
+
+
+# GPIO
+gpio_sunxi
+
+# GPU
+ump
+mali
+
+# Multimedia
+sunxi_cedar_mod
+
+# WIFI
+#bcmdhd
+
+# firewall
+ip_tables
+
+接下來要把防火牆規則寫在/root/firewall.sh
+# touch /root/firewall.sh
+# chmod +x /root/firewall.sh
+# vi /root/firewall.sh
+
+這裡列出我的/root/firewall.sh完整內容如下
+#!/bin/bash
+# ============ Set your network parameters here ===================================================
+iptables=/sbin/iptables
+loopback=127.0.0.1
+local=192.168.0.160
+lan=192.168.0.0/24
+# =================================================================================================
+$iptables -t filter -F
+$iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
+$iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 36000 -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 -j ACCEPT
+$iptables -t filter -A INPUT -s $lan -d 192.168.0.160 -p icmp -j ACCEPT
+$iptables -t filter -P INPUT DROP
+$iptables -t filter -L -n --line-number
+# =================================================================================================
+
+接著在/etc/rc.local裡面呼叫/root/firewall.sh
+這裡列出我的完整的/etc/rc.local
+如下
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+/root/firewall.sh
+
+exit 0
+
+重新將CubieTruck開機
+# init 6
+
+然後可以使用這個指令查看本機防火牆有沒有啟用了
+# iptables -t filter -L -n --line-number
+
+如果正確啟用了本機防火牆，就會看到這樣的終端機輸出
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination         
+1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+2    ACCEPT     all  --  127.0.0.1            127.0.0.1           
+3    ACCEPT     all  --  192.168.0.160        192.168.0.160       
+4    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:36000
+5    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:80
+6    ACCEPT     icmp --  192.168.0.0/24       192.168.0.160       
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+root@cubie:~# 
+
+(只有保護本機，所以只有在filter表的INPUT鏈加上過濾規則，持續加強中…還在看怎麼防止DDOS功撃的部分，稍後弄懂了之後會補上)

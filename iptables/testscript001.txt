@@ -1,0 +1,29 @@
+iptables -t filter -F
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -t filter -A INPUT -i lo -s 127.0.0.1 -d 127.0.0.1 -p all -j ACCEPT
+iptables -t filter -A INPUT -i eth0 -s 192.168.0.160 -d 192.168.0.160 -p all -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 36000 -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 113 -j ACCEPT
+iptables -t filter -A INPUT -s 192.168.0.0/24 -d 192.168.0.160 -p icmp -j ACCEPT
+iptables -t filter -P INPUT DROP
+iptables -t filter -L -n --line-number
+
+
+http://serverfault.com/questions/416537/why-does-a-valid-set-of-iptables-rules-slow-my-server-to-a-crawl
+
+
+http://www.textndata.com/forums/iptables-firewall-making-smtp-pop3-323613.html
+
+
+啟用本機防火牆之前，需要先載入ip_tables模組
+sudo modprobe ip_tables
+sudo echo 'ip_tables' >> /etc/modules
+
+參考資料
+http://stackoverflow.com/questions/21983554/iptables-v1-4-14-cant-initialize-iptables-table-nat-table-does-not-exist-d
+
+然後又
+iptables v1.4.14: can't initialize iptables table `filter': Permission denied (you must be root)
+
+哇草
