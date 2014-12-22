@@ -1,3 +1,4 @@
+(此篇只記錄一些廢話，請不要認真看，因為這篇我寫得很隨便，你如果認真看，我會很不好意思)
 iptables -t filter -F
 iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -t filter -A INPUT -i lo -s 127.0.0.1 -d 127.0.0.1 -p all -j ACCEPT
@@ -9,12 +10,8 @@ iptables -t filter -A INPUT -s 192.168.0.0/24 -d 192.168.0.160 -p icmp -j ACCEPT
 iptables -t filter -P INPUT DROP
 iptables -t filter -L -nv --line-number
 
-
 http://serverfault.com/questions/416537/why-does-a-valid-set-of-iptables-rules-slow-my-server-to-a-crawl
-
-
 http://www.textndata.com/forums/iptables-firewall-making-smtp-pop3-323613.html
-
 
 啟用本機防火牆之前，需要先載入ip_tables模組
 sudo modprobe ip_tables
@@ -26,15 +23,78 @@ http://stackoverflow.com/questions/21983554/iptables-v1-4-14-cant-initialize-ipt
 然後又
 iptables v1.4.14: can't initialize iptables table `filter': Permission denied (you must be root)
 
-哇草
+哇草原因是我白爛把firewall.sh放在/etc/profile.d目錄下
+應該要在/etc/rc.local裡面呼叫firewall.sh才對，放在/etc/profile.d幹什麼
 
 網關式防火牆 練習1
 對外網卡eth0，對內網卡eth1
+限制內網的192.168.0.200只能去10.0.1.100寄信(25)或收信(110)
+限制內網的192.168.0.0/24所有IP可以存取Internet上面的25(寄信)110(收信) 80(瀏覽網頁無加密) 443(瀏覽網頁有加密)
+限制內網的192.168.0.0/24所有IP可以存取Internet上面的udp 53也就是DNS查詢服務
 
-iptables -t filter -F FOWWARD
+iptables -t filter -F FORWARD
 iptables -t filter -A FORWARD -i eth0 -o eth1 -m state --state ESTABLISHED,RELATED -j ACCEPT
-iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.200 -d 10.0.1.100 -p tcp --dport 25,110 -j ACCEPT
-iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp --dport 25,110 -j ACCEPT
-iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp --dport 80,443 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.200 -d 10.0.1.100 -p tcp -m multiport --dports 25,110 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp -m multiport --dports 25,110 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp -m multiport --dports 80,443 -j ACCEPT
 iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p udp --dport 53 -j ACCEPT
-iptables -t filter -P FORWARD -P DROP
+iptables -t filter -P FORWARD DROP
+
+nat表的封包流向
+以nat CHAIN iptables當作關鍵字，Google圖片搜尋
+幾十個網友畫得圖有些出入，仔細研究一下
+
+讓內部網路使用NAT機制上網
+對外網卡eth0，對內網卡eth1
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.5.0/24 -j SNAT --to 118.169.0.31
+或是不寫外網IP，直接寫成這樣，與上面那一行顯式指定外網IP的指令同等效力
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.5.0/24 -j MASQUERADE
+如果外網是撥接式的ADSL，也可能會寫成這樣
+iptables -t nat -A POSTROUTING -o ppp0 -s 192.168.5.0/24 -j MASQUERADE
+
+nat多對多(外網有多個IP，但是一定要連續號碼好討厭，感覺是有錢人才有資格下的指令，我家是用二類電信我連TM一個public IP都沒有)
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.5.0/24 -j SNAT --to 118.169.0.31-118.169.0.35
+
+nat一對一
+請準備多個public IP，綁在外網的eth0接口
+一個eth0綁上多個IP的參考資料
+https://wiki.debian.org/NetworkConfiguration#Multiple_IP_addresses_on_One_Interface
+防火牆主機上共有三張網卡，eth0對外，eth1是DMZ區，eth2是企業內部網路
+eth0綁上了118.169.0.31和118.169.0.32和118.169.0.33
+eth1綁上了192.168.0.254
+eth2綁上了192.168.1.254
+有一台WWW服務器位於DMZ區內，IP是192.168.0.32
+有一台Mail服務器也在DMZ區內，IP是192.168.0.33
+目前規劃將外部IP:118.169.0.31當成企業內部nat前方的Public IP
+外部IP:118.169.0.32要對映到WWW服務器192.168.0.32
+外部IP:118.169.0.33要對映到Mail服務器192.168.0.33
+從Internet過來的封包，進入我的WWW服務器的配置是
+iptables -t nat -A PREROUTING -i eth0 -d 118.169.0.32 -j DNAT --to 192.168.0.32
+如果這台WWW服務器有機會它會主動連到Internet，那麼這個也設一下
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.32 -j SNAT --to 118.169.0.32
+
+同樣的原理，你可以推出118.169.0.33要映射給內網裡的Mail服務器，要這樣設定
+iptables -t nat -A PREROUTING -i eth0 -d 118.169.0.33 -j DNAT --to 192.168.0.33
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.33 -j SNAT --to 118.169.0.33
+
+接下來是我一定會用到的Network Address Port Translation (NAPT)
+為什麼一定會用到呢？因為我是個窮逼啊~哈哈哈
+上面那個一對一NAT還有3個public IP可以用
+現實生活裡我大概申請一個就覺得很貴很貴了，所以就用這個方法來作連接埠映射到內網的服務器
+描述一下網路環境
+外網eth0，IP是118.169.0.31，就只有這一個寶貴的public IP嗚
+內網eth1，連接我們服務器放置的DMZ區，IP是192.168.0.254
+內網eth2，連接我們企業內網，IP是192.168.1.254
+WWW服務器IP是192.168.0.1
+Mail服務器IP是192.168.0.2
+我們要將Internet送到eth0的80和443 port轉給192.168.0.1
+還有將Internet送到eth0的25和110 port轉給192.168.0.2
+封包進來eth0設定是
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to 192.168.0.1:80
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j DNAT --to 192.168.0.1:443
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 25 -j DNAT --to 192.168.0.2:25
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 110 -j DNAT --to 192.168.0.2:110
+讓這兩台服務器的封包可以出去，將來源改成public IP
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j SNAT --to 118.169.0.31
+
+很晚了，該睡了呼
