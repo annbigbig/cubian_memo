@@ -127,7 +127,20 @@ $iptables -t filter -A INPUT -d $local -p tcp --dport 36000 -j ACCEPT
 $iptables -t filter -A INPUT -d $local -p tcp --dport 80 -j ACCEPT
 $iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
 $iptables -t filter -P INPUT DROP
-$iptables -t filter -L -n --line-number
+$iptables -t filter -L -nv --line-number
+# =================================================================================================
+
+每一條規則解釋如下
+清空filter表的所有規則
+如果是本機發出第一個請求封包之後，得到其他異地機的回應，這種封包可以接受
+如果是從本機lo介面進入，來源是127.0.0.1，目的地是127.0.0.1，封包類型不限制，這種封包可以接受
+如果是從本機eth0介面進入，來源是192.168.0.160，目的地是192.168.0.160，封包類型不限制，這種封包可以接受
+如果是要連接到本機192.168.0.160的tcp port 36000（自定義的ssh server服務），這種封包可以接受
+如果是要連接到本機192.168.0.160的tcp port 80（nginx HTTP Server服務），這種封包可以接受
+如果來源IP是從內網區段192.168.0.0/24，而目的地是本機192.168.0.160的icmp封包，這種封包可以接受
+預設的filter表的INPUT鏈規則是DROP
+打印一下filter表的防火牆規則，--line-number加上行號，以及-n不要試著去反查規則裡的IP的DNS域名，以及-v列出更為詳細的資訊
+
 # =================================================================================================
 
 接著在/etc/rc.local裡面呼叫/root/firewall.sh
@@ -154,23 +167,23 @@ exit 0
 # init 6
 
 然後可以使用這個指令查看本機防火牆有沒有啟用了
-# iptables -t filter -L -n --line-number
+# iptables -t filter -L -nv --line-number
 
 如果正確啟用了本機防火牆，就會看到這樣的終端機輸出
-Chain INPUT (policy DROP)
-num  target     prot opt source               destination         
-1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
-2    ACCEPT     all  --  127.0.0.1            127.0.0.1           
-3    ACCEPT     all  --  192.168.0.160        192.168.0.160       
-4    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:36000
-5    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:80
-6    ACCEPT     icmp --  192.168.0.0/24       192.168.0.160       
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+91429 7939K ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+    1    60 ACCEPT     all  --  lo     *       127.0.0.1            127.0.0.1           
+    0     0 ACCEPT     all  --  eth0   *       192.168.0.160        192.168.0.160       
+    1    60 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:36000
+    0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:80
+    0     0 ACCEPT     icmp --  *      *       192.168.0.0/24       192.168.0.160       
 
-Chain FORWARD (policy ACCEPT)
-num  target     prot opt source               destination         
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
 
-Chain OUTPUT (policy ACCEPT)
-num  target     prot opt source               destination         
-root@cubie:~# 
+Chain OUTPUT (policy ACCEPT 135 packets, 13985 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+root@cubie:~#
 
 (只有保護本機，所以只有在filter表的INPUT鏈加上過濾規則，持續加強中…還在看怎麼防止DDOS功撃的部分，稍後弄懂了之後會補上)

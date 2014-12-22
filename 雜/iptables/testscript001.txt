@@ -7,7 +7,7 @@ iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 -j ACCEPT
 iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 113 -j ACCEPT
 iptables -t filter -A INPUT -s 192.168.0.0/24 -d 192.168.0.160 -p icmp -j ACCEPT
 iptables -t filter -P INPUT DROP
-iptables -t filter -L -n --line-number
+iptables -t filter -L -nv --line-number
 
 
 http://serverfault.com/questions/416537/why-does-a-valid-set-of-iptables-rules-slow-my-server-to-a-crawl
@@ -27,3 +27,14 @@ http://stackoverflow.com/questions/21983554/iptables-v1-4-14-cant-initialize-ipt
 iptables v1.4.14: can't initialize iptables table `filter': Permission denied (you must be root)
 
 哇草
+
+網關式防火牆 練習1
+對外網卡eth0，對內網卡eth1
+
+iptables -t filter -F FOWWARD
+iptables -t filter -A FORWARD -i eth0 -o eth1 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.200 -d 10.0.1.100 -p tcp --dport 25,110 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp --dport 25,110 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp --dport 80,443 -j ACCEPT
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p udp --dport 53 -j ACCEPT
+iptables -t filter -P FORWARD -P DROP
