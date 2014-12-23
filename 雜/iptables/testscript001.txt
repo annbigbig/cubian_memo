@@ -97,4 +97,77 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 110 -j DNAT --to 192.168.0.
 讓這兩台服務器的封包可以出去，將來源改成public IP
 iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j SNAT --to 118.169.0.31
 
-很晚了，該睡了呼
+再來看到了mangle表的OUTPUT鏈
+我還是一樣先用關鍵字
+nat chain iptables
+搜尋了Google圖片
+這個網頁裡畫的那張Iptables Chains Order Scheme
+我覺得最容易理解
+參考網頁
+http://www.gtcomm.net/blog/linux-native-firewall-introduction-to-iptables/
+而且它還有特別標上，你在那個表的那個鏈裡面可以幹什麼事
+
+我真的很好奇書上寫的那個mangle表的OUPUT鏈
+真的可以換掉封包裡的DSCP資訊嗎？
+所以我就試了一下
+在我的CubieTruck上面，由於SSH Server是運行在tcp port 36000
+在動手前我先用Wireshark抓了一下
+這樣子的封包，也就是CubieTruck上的SSH Server發給我筆記型電腦SSH Client的封包
+Src : 192.168.0.160
+Dst : 192.168.0.12
+Src Port : 36000
+Dst Port : 51625(這隨機產生的port number，你的一定和我不一樣)
+在Internet Protocol Version 4 , Src :192.168.0.160 ......這行打開
+下面有個
+Differentiated Services Field : 0x10 (DSCP 0x04: Unknown DSCP; ECN: 0x00: Not-ECT (Not ECN-Capable Transport))
+的下面那一行
+0001 00.. = Diffreentiated Services Codepoint: Unknown (0x04)
+在這裡可以確認DSCP的預設值是十進制的4，也就是那個二進制的0001 00
+然後在CubieTruck機器上運行這一行iptables規則，來修改從CubieTruck本機發出的tcp 36000 port的封包的DSCP值
+iptables -t mangle -A OUTPUT -p tcp --sport 36000 -j DSCP --set-dscp 63
+我故意改成十進制的63，這樣如果待會兒真的生效，就會看到原來預設0001 00的地方，會變成1111 11
+改完之後，mangle表的規則如下，只有一條
+root@cubie:~# iptables -t mangle -L -nv --line-number
+Chain PREROUTING (policy ACCEPT 2903 packets, 292K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 2903 packets, 292K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 3222 packets, 413K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     1075  188K DSCP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:36000 DSCP set 0x3f
+
+Chain POSTROUTING (policy ACCEPT 3222 packets, 413K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+root@cubie:~# 
+然後再次打開Wireshark來抓封包
+一樣是抓
+Src : 192.168.0.160
+Dst : 192.168.0.12
+Src Port : 36000
+Dst Port : 51625(這隨機產生的port number，你的一定和我不一樣)
+這種類型的封包，然後觀察DSCP的部分，變成了
+1111 11.. = Differentiated Services Codepoint: Unknown (0x3f)
+太神奇了，只是改這個要幹什麼呢？
+看完這本五百頁的書應該就會知道了，現在才一百零五頁
+
+突然發現這張iptables封包的過濾流程圖也畫得很清楚
+而且連raw表也加了進去
+http://serverfault.com/questions/523589/is-there-any-way-to-filter-packets-eg-by-iptables-after-routing-is-complete
+
+在防火牆主機上，使用filter表的FORWARD鏈來保護企業內部的WWW服務器(192.168.5.1)不被外部IP 11.22.33.44存取
+iptables -t filter -A FORWARD -i eth0 -s 11.22.33.44 -d 192.168.5.1 -j DROP
+寫這一行規則的時候，要記得封包到達filter表的FORWARD鏈之前
+已經先經過了nat表的PREROUTING鏈 
+(已經作了DNAT，已經置換掉了封包的Destination IP)
+而且外部的那個想進入企業內存取WWW服務器的封包
+原來的Source IP應該是11.22.33.44而Destination IP應該是防火牆eth0上面的外部IP
+經過了nat表的PREROUTING鏈之後，這個封包已經變成了
+Source IP依然不變是11.22.33.44，但是Destination IP被DNAT變成了192.168.5.1
+所以我們在這裡的規則是用 -d 192.168.5.1，而不是-d <eth0接口上綁的企業的public IP>
+
+
