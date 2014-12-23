@@ -170,4 +170,91 @@ iptables -t filter -A FORWARD -i eth0 -s 11.22.33.44 -d 192.168.5.1 -j DROP
 Source IP依然不變是11.22.33.44，但是Destination IP被DNAT變成了192.168.5.1
 所以我們在這裡的規則是用 -d 192.168.5.1，而不是-d <eth0接口上綁的企業的public IP>
 
+防火牆主機常見的filter表的FORWARD鏈過濾規則寫法
+對外接口eth0，對內接口eth1
+
+1.不允許企業內部用戶訪問www.xvideos.com
+iptables -t filter -A FORWARD -p tcp -i eth1 -o eth0 -d www.xvideos.com -j DROP
+
+順便一提，上面的這一句規則會一口氣加上十條規則在FORWARD鏈
+原因是www.xvideos.com這個域名有對應到10個IPv4地址
+可以這樣用nslookup查詢
+$ nslookup www.xvideos.com 8.8.8.8
+
+然後會得到
+Server:		8.8.8.8
+Address:	8.8.8.8#53
+
+Non-authoritative answer:
+www.xvideos.com	canonical name = xvideos.com.
+Name:	xvideos.com
+Address: 141.0.174.44
+Name:	xvideos.com
+Address: 141.0.174.34
+Name:	xvideos.com
+Address: 141.0.174.35
+Name:	xvideos.com
+Address: 141.0.174.36
+Name:	xvideos.com
+Address: 141.0.174.37
+Name:	xvideos.com
+Address: 141.0.174.38
+Name:	xvideos.com
+Address: 141.0.174.40
+Name:	xvideos.com
+Address: 141.0.174.41
+Name:	xvideos.com
+Address: 141.0.174.42
+Name:	xvideos.com
+Address: 141.0.174.43
+
+看一下加入那條禁看www.xvideos.com的規則之後，filter表的FORWARD鏈規則現在是？
+root@cubie:~# iptables -t filter -L FORWARD -nv --line-number
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.36        
+2        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.43        
+3        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.40        
+4        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.44        
+5        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.38        
+6        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.41        
+7        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.34        
+8        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.37        
+9        0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.42        
+10       0     0 DROP       tcp  --  eth1   eth0    0.0.0.0/0            141.0.174.35        
+root@cubie:~# 
+
+2.不允許Internet的11.22.33.44主機訪問公司內部的WWW服務器(192.168.0.1)
+iptables -t filter -A FORWARD -i eth0 -o eth1 -s 11.22.33.44 -d 192.168.0.1 -p tcp --dport 80 -j DROP
+
+3.不允許icmp request (type 8)，別人不能ping我，但是我可以ping別人 (突然想起三國的曹操)
+iptables -t filter -A FORWARD -p icmp --icmp-type 8 -j DROP
+
+4.不允許內網的用戶使用FTP客戶端下載Internet上的任何東西
+iptables -t filter -A FORWARD -i eth1 -o eth0 -s 192.168.0.0/24 -p tcp --dport 21 -j DROP
+
+使用關鍵字3 way handshake
+進行Google圖片搜尋
+
+原來的本機防火牆規則的這二條
+是我用來放行自定義SSH Server的tcp port 36000
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 36000 -j ACCEPT
+
+但是這樣不夠嚴謹
+可以改成
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 36000 --syn -m state --state NEW -j ACCEPT
+
+第二行的意思是與本機的tcp port 36000建立tcp連線的過程裡
+3 way handshake的第一個封包(-m state--state NEW)裡syn這個flag有設定的話，就放行
+這麼作是為了避免黑客在建立tcp連線之前，就直接對tcp port 36000發送fin封包，或是syn和fin這兩個flag都有設定的怪異封包
+那種詭異的封包如果通過本機防火牆進入本機程序，不知道會發生什麼事 (要不看到臉，要不看到後腦勺，兩個同時看到就崩潰進神經病院了)
+所以這樣的寫法，比先前只是單純讓tcp port 36000打開接受連線，安全強度要更高
+
+同理可推出，那麼我先前的本機防火牆，除了tcp port 36000還開了tcp port 80
+那一條「只是打開tcp port 80」的本機防火牆規則是
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 -j ACCEPT
+應該要拿掉上面這行，改成下面這一行
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 --syn -m state --state NEW -j ACCEPT
 
