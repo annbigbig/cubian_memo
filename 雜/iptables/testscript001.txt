@@ -258,3 +258,115 @@ iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 -j ACCEPT
 應該要拿掉上面這行，改成下面這一行
 iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 --syn -m state --state NEW -j ACCEPT
 
+以下規則為所有tcp封包作過濾，檢查封包裡所有的TCP-Flags
+當syn和fin同時被標示為1的時候，將此封包丟棄，因為不可能同時既要求連線(syn)又要求斷線(fin)
+iptables -t filter -A INPUT -p tcp --tcp-flags ALL SYN,FIN -j DROP
+
+以下規則和上面那條很像，差別是只檢查syn和fin兩個TCP-Flags
+當syn和fin同時被標示為1的時候，將此封包丟棄
+iptables -t filter -A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+接下來這一條規則也是用在本機防火牆上
+想要存取本機tcp port 3306的封包，來源只能是特定mac address的網卡才可以放行
+iptables -t filter -A INPUT -p tcp --dport 3306 -m mac --mac-source 9c:d2:1e:f1:0a:53 -j ACCEPT
+
+然後是在防火牆主機上管制網卡mac address的技巧
+產生一個可以使用企業網路資源的合法mac address列表，只有裡面記錄的mac address可以使用企業的網路資源
+檔名是/root/mac_lists
+內容如下
+00:0A:C3:82:71:5C
+00:22:33:44:55:66
+
+接著在/root/firewall.sh加上
+cat /root/mac_lists | while read MAC
+do
+    MAC=$( echo $MAC | awk '{print $1}' )
+    iptables -t filter -A FORWARD -i eth1 -o eth0 -m mac --mac-source $MAC -j ACCEPT
+done
+
+再來是multiport的寫法
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW  -m multiport --dports 21,22,23,25,80,110,443 -j ACCEPT
+
+你也可以畫蛇添足，將上面簡單的那一行，改寫成
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 21 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 22 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 23 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 25 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 80 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 110 -j ACCEPT
+iptables -t filter -A INPUT -p tcp --syn -m state --state NEW --dport 443 -j ACCEPT
+這一坨東西和上面那一行使用了-m multiport寫法的指令是同等效力的
+
+再來是脫褲子放P的封包過濾法
+假設eth1是防火牆上的內網接口，而eth0是防火牆上的外網接口
+原來我們只要寫一行的東西
+iptables -t filter -A FORWARD -i eth1 -p tcp --dport 80 -j DROP
+可以把它寫成這樣子的兩行
+(在PREROUTING鏈不得使用-o eth0所以我沒寫，所以連帶上面的那一行我也沒寫-o eth0)
+iptables -t mangle -A PREROUTING -i eth1 -p tcp --dport 80 -j MARK --set-mark 80
+iptables -t filter -A FORWARD -p tcp -m mark --mark 80 -j DROP
+我完全不知道為什麼要拿石頭砸自已的腳，這樣寫有比較帥嗎？直接識別到封包直接丟掉就好了
+為什麼要先蓋上個豬肉章，然後在下一個步驟的FORWARD鏈發現有蓋上豬肉章的封包再丟掉呢？？？
+地球上有些問題是沒有答案的，我只要知道比較高效的那種寫法就可以了
+
+再來是奇特的可以判斷封包是本機的那一個用戶產生的機制，注意這裡我強調的「本機」
+這個判定封包是那個用戶產生的機制，只能使用於OUTPUT和POSTROUTING鏈
+(書上沒寫什麼表的OUTPUT和POSTROUTING鏈，所以也許是所有的有OUTPUT鏈和POSTROUTING鏈的表都能使用，不過這個功能我應該用不到)
+以下是實際用法，限制本機用戶anntony只能瀏覽網頁
+iptables -t filter -A OUTPUT -p tcp --dport 80 -m owner --uid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p tcp --dport 443 -m owner --uid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p udp --dport 53 -m owner --uid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p all -m owner --uid-owner anntony -j DROP
+或是用剛才學來的multiport縮寫成三行
+iptables -t filter -A OUTPUT -p tcp -m multiport --dports 80,443 -m owner --uid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p udp --dport 53 -m owner --uid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p all -m owner --uid-owner anntony -j DROP
+
+上面是指定由本機單一用戶所產生的封包處置，接下來是本機單一群組所產生的封包處置
+把上例再擴大成「本機的anntony群組」只能瀏覽網頁
+指令看起來和上面超像，差別只在--uid-owner換成--gid-owner而已
+iptables -t filter -A OUTPUT -p tcp --dport 80 -m owner --gid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p tcp --dport 443 -m owner --gid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p udp --dport 53 -m owner --gid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p all -m owner --gid-owner anntony -j DROP
+或是用剛才學來的multiport縮寫成三行
+iptables -t filter -A OUTPUT -p tcp -m multiport --dports 80,443 -m owner --gid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p udp --dport 53 -m owner --gid-owner anntony -j ACCEPT
+iptables -t filter -A OUTPUT -p all -m owner --gid-owner anntony -j DROP
+
+再來是匹配某個區間的IP段
+例如192.168.0.2到192.168.0.61這一個區段的主機都不可以連接到本機
+除了呆呆的這樣寫，從2寫到3寫到4一路寫到61這種蠢方法之外
+iptables -t filter -A INPUT -p all -s 192.168.0.2 -j DROP
+iptables -t filter -A INPUT -p all -s 192.168.0.3 -j DROP
+iptables -t filter -A INPUT -p all -s 192.168.0.4 -j DROP
+(繼續寫…一直寫…)
+iptables -t filter -A INPUT -p all -s 192.168.0.60 -j DROP
+iptables -t filter -A INPUT -p all -s 192.168.0.61 -j DROP
+(就這樣一共寫了60行哈哈回到了兒時的天真)
+
+或者是稍微再高級一點的寫法
+寫成
+iptables -t filter -A INPUT -p all -s 192.168.0.1 -j ACCEPT
+iptables -t filter -A INPUT -p all -s 192.168.0.62 -j ACCEPT
+iptables -t filter -A INPUT -p all -s 192.168.0.63 -j ACCEPT
+iptables -t filter -A INPUT -p all -s 192.168.0.0/26 -j DROP
+如果寫成192.168.0.0/26
+netmask有26個bit，所以主機地址只剩6個bit
+000000 到 111111
+換成十進制是 0 到 63
+0是網路識別，63是廣播地址
+為了不讓192.168.0.1 和 192.168.0.62 和 192.168.0.63 被第4行的DROP規則丟掉，先放他們進來
+但是這樣很累，我還要自已去研究要使用幾個bit的netmask最接近我要匹配的網路區段
+192.168.0.2 - 192.168.0.61 比較接近 192.168.0.0/26這個CIDR的範圍 192.168.0.1 - 192.168.0.63
+先把1和62和63放進來，再把192.168.0.0/26整個區段拒絕
+就達成了拒絕192.168.0.2 - 192.168.0.61連續區段IP的效果了，也不用呆呆的寫60行差不多的指令
+這樣比起原先那個呆呆60行看起來有巨大的進步
+變成只有4行，可是還可以再聰明一點，寫成一行，如下
+iptables -t filter -A INPUT -m iprange --src-range 192.168.0.2-192.168.0.61 -j DROP
+這樣一行指令就完成了「192.168.0.2 到 192.168.0.61這60台主機都不可以訪問本機」的防火牆規則
+如果不允許本機去訪問 192.168.0.101 到 192.168.0.120這20台主機 (也許那裡放著什麼企業裡珍貴的資料)，可以寫成
+iptables -t filter -A OUTPUT -m iprange --dst-range 192.168.0.101-192.168.0.120 -j DROP
+感謝iprange模組的努力
+
+
