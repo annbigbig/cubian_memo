@@ -369,4 +369,21 @@ iptables -t filter -A INPUT -m iprange --src-range 192.168.0.2-192.168.0.61 -j D
 iptables -t filter -A OUTPUT -m iprange --dst-range 192.168.0.101-192.168.0.120 -j DROP
 感謝iprange模組的努力
 
+再來是ttl模組 (Time to Live 字面上翻是存活時間，但是實質意義已經變成封包移動超過該數字的路由器數量就會嗝屁)
+丟掉IP包頭裡TTL值「等於」64的封包
+iptables -t filter -A INPUT -m ttl --ttl-eq 64 -j DROP
+丟掉IP包頭裡TTL值「小於」64的封包
+iptables -t filter -A INPUT -m ttl --ttl-lt 64 -j DROP
+丟掉IP包頭裡TTL值「大於」64的封包
+iptables -t filter -A INPUT -m ttl --ttl-gt 64 -j DROP
+
+Linux發出的封包預設的TTL值是64，而Windows是128
+封包每經過一個路由器，其TTL值會減少1，當變成0的時候，會被路由器丟棄掉
+不過在這裡我搞不懂為什麼要來匹配TTL值，然後對TTL值「等於」或是「大於」或是「小於」某個數字(例如64)的封包來作出處置
+如果來到我的防火牆主機上，TTL值只剩54，那麼表示這個封包旅行了經過了10個路由器來到我這裡
+接著我處置這個封包，也許接受、也許丟棄，和它的旅行的哩程數有什麼直接關係呢？
+跑得太遠了，殺，或是跑得不夠遠，殺，或是跑得剛好是經過了N個路由器一個不多一個不少，殺
+這樣有點怪怪的，暫時無法理解此模組的意圖
+
+
 
