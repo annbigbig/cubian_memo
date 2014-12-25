@@ -140,3 +140,36 @@ $ ssh -p36000 -i ./cubie@cubian.private.key -t -L 5900:localhost:5933 cubie@192.
 如果其中一邊退出了ssh登入，那麼你在筆記型電腦上，就再不能使用127.0.0.1:5900來連到Cubian機器上運行的VNC Server了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+還是ssh tunnel
+
+也可以不使用Vnc Server上的tcp port 5933再轉5900的方式
+讓Vnc Viewer直接對著Vnc Server的127.0.0.1:5900連線
+在Vnc Server上不用再執行這一行指令
+$ ssh -p36000 -t -R 5933:localhost:5900 cubie@localhost
+這一行指令的效果是
+在CubieTruck（Vnc Server）上，對著localhost:5933連線的封包，轉發到localhost:5900
+不用這樣子也可以
+Vnc Server這邊什麼事也不要作
+然後在Vnc Viewer (筆記型電腦)
+執行這樣的ssh客戶端指令
+$ cd /home/anntony/.ssh/cubian
+$ ssh -p36000 -i ./cubie@cubian.private.key -t -L 5900:127.0.0.1:5900 cubie@192.168.0.160
+
+第二行指令的-L後面跟著的5900
+意思是在Vnc Viewer這邊（筆記型電腦）本機的tcp port 5900上面
+對應著SSH Server那邊的127.0.0.1:5900也就是Vnc Server的端口
+ssh客戶端連線成功之後，你可以打開筆記型電腦的終端機
+執行
+anntony@anntony-Lenovo-B590 ~ $ sudo -i
+[sudo] password for anntony: 
+anntony-Lenovo-B590 ~ # netstat -anp|grep 5900
+tcp        0      0 127.0.0.1:5900          0.0.0.0:*               LISTEN      3354/ssh        
+tcp6       0      0 ::1:5900                :::*                    LISTEN      3354/ssh        
+anntony-Lenovo-B590 ~ # 
+
+然後你會看到筆記型電腦的127.0.0.1:5900居然有在LISTEN
+感覺上就像把遠端的CubieTruck機器上運行的Vnc Server綁架來本地機了一樣
+接著就很單純
+你打開Vnc Viewer朝著127.0.0.1:5900這個地址連線就大功告成了
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
