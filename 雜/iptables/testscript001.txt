@@ -385,5 +385,157 @@ Linux發出的封包預設的TTL值是64，而Windows是128
 跑得太遠了，殺，或是跑得不夠遠，殺，或是跑得剛好是經過了N個路由器一個不多一個不少，殺
 這樣有點怪怪的，暫時無法理解此模組的意圖
 
+接下來是過濾ah和esp包頭裡的spi值
+我只是照著書上教的，事實上我在看完這十幾頁之後我還是完全搞不懂偉大的作者想告訴我什麼東西
+這裡講到的技術名詞ah、esp、spi值好像是和IPSec有關
+很遺憾我也不知道IPSec是什麼，感覺好像是和VPN有關係的東西
+我大概再翻幾千頁手冊就會懂了 (光想就覺得很可悲)…應該吧…不過太嘴砲的東西、無法操作的東西、太抽象的東西我通常沒什麼興趣繼續深究
+我關注的是正常人會用到的東西，抱怨結束，指令如下
+iptables -t filter -A FORWARD -p ah -m ah --ahspi 300 -j ACCEPT
+iptables -t filter -A FORWARD -p esp -m esp --espspi 200 -j ACCEPT
+以上兩條規則是用來放行ah包頭裡spi值為300的封包
+以及esp包頭裡spi值為200的封包
 
+再來是禁止icmp協定的ping broadcast也就是執行 ping -b 192.168.0.255
+然後故意去ping區網的廣播地址這樣的封包
+這樣該區網內所有主機都會收到一個icmp request包，然後所有區網內的主機再回覆發送端主機一個icmp response封包
+如果有心人把發送端主機的IP改成那個他想要攻擊的某一台區網主機IP
+透過大量收到區網內所有主機icmp response封包的方式，可以癱瘓掉該台主機
+iptables -A FORWARD -p icmp -m pkttype --pkt-type broadcast -j DROP
 
+接下來要講icmp封包的MTU
+我打開了筆記型電腦(192.168.0.12)的終端機，然後執行
+# ping 192.168.0.160
+就這樣讓筆記型電腦一直ping我的CubieTruck
+然後打開了安裝在筆記型電腦上的Wireshark，抓wlan0介面的封包來分析
+只看這種封包
+Source : 192.168.0.12
+Destination : 192.168.0.160
+Protocal : ICMP
+然後在Wireshark中間的面版，可以看到
+> Frame 229: 98 bytes on wire (784 bits), 98 bytes captured (784 bits) on interface 0
+> Ethernet II, Src: HonHaiPr_f1:0a:53 (9c:d2:1e:f1:0a:53), Dst: 02:cc:02:42:95:d3 (02:cc:02:42:95:d3)
+> Internet Protocol Version 4, Src: 192.168.0.12 (192.168.0.12), Dst: 192.168.0.160 (192.168.0.160)
+> Internet Control Message Protocol
+
+在第一行可以看到抓到的icmp封包長度是98 bytes
+把滑鼠點在這四行的任何一行，然後在Wireshark軟體的最下方的狀態列可以看到每個部分有不同的長度
+狀態列依照我點的行數，結果如下
+第一行: Frame (frame), 98 bytes
+第二行: Ethernet (eth), 14 bytes
+第三行: Internet Protocol Version 4(ip), 20 bytes
+第四行: Internet Control Message Protocol(icmp), 64 bytes
+
+上面可以看出一個公式
+第一行的bytes數 = 第二行的bytes數 + 第三行的bytes數 + 第四行的bytes數
+98 = 14 + 20 + 64
+如果照著書上教的，icmp封包的MTU的長度(length)應該是不計算第二行的Ethernet包頭的14 bytes
+也就是只算第三行的bytes數+第四行的bytes數
+也就是IP包頭的20 bytes加上ICMP包頭的64 bytes = 20 + 64 = 84 bytes
+
+如果照著書上講的，那麼我的Linux系統發出的icmp封包的MTU長度應該是84 bytes
+不過在Wireshark裡我看到抓到的icmp封包，如果連第二行Ethernet的那14個bytes也加進去，應該是98個bytes
+所以Linux系統發出的icmp封包，MTU長度到底要算是98 bytes還是84 bytes？
+我很想知道作者在書上講的到底是不是真的？
+所以我作了個小實驗
+現在我的CubieTruck的本機防火牆也就是filter表的INPUT鏈規則如下
+root@cubie:~# iptables -t filter -L INPUT -nv --line-number
+Chain INPUT (policy DROP 5 packets, 268 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     221K   18M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+2        1    60 ACCEPT     all  --  lo     *       127.0.0.1            127.0.0.1           
+3        0     0 ACCEPT     all  --  eth0   *       192.168.0.160        192.168.0.160       
+4        1    60 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+5        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+6        2   168 ACCEPT     icmp --  *      *       192.168.0.0/24       192.168.0.160       
+root@cubie:~#
+
+這時候在筆記型電腦(192.168.0.12)這裡是可以ping到CubieTruck的
+anntony@anntony-Lenovo-B590 ~/cubian_memo $ ping 192.168.0.160
+PING 192.168.0.160 (192.168.0.160) 56(84) bytes of data.
+64 bytes from 192.168.0.160: icmp_seq=1 ttl=64 time=1.17 ms
+64 bytes from 192.168.0.160: icmp_seq=2 ttl=64 time=1.14 ms
+64 bytes from 192.168.0.160: icmp_seq=3 ttl=64 time=1.18 ms
+^C
+--- 192.168.0.160 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+rtt min/avg/max/mdev = 1.141/1.164/1.183/0.043 ms
+anntony@anntony-Lenovo-B590 ~/cubian_memo $
+
+然後我在CubieTruck (192.168.0.160)的本機防火牆裡加入了這一行規則
+(第6條規則會把來自192.168.0.0/24區網內所有主機的icmp封包都放行，所以我必須把這條規則插在第6條，而原來的第6條會被擠到第7條)
+iptables -t filter -I INPUT 6 -p icmp --icmp-type 8 -m length --length 84 -j DROP
+
+再看一下現在插入上面這條規則之後，CubieTruck本機防火牆的filter表的INPUT鏈規則變成了？
+root@cubie:~# iptables -t filter -L INPUT -nv --line-number
+Chain INPUT (policy DROP 1 packets, 68 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     234K   19M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+2        1    60 ACCEPT     all  --  lo     *       127.0.0.1            127.0.0.1           
+3        0     0 ACCEPT     all  --  eth0   *       192.168.0.160        192.168.0.160       
+4        1    60 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+5        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+6        0     0 DROP       icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8 length 84
+7        6   504 ACCEPT     icmp --  *      *       192.168.0.0/24       192.168.0.160       
+root@cubie:~#
+
+現在回到筆記型電腦上(192.168.0.12)，試著去ping我們的CubieTruck機器(192.168.0.160)
+anntony@anntony-Lenovo-B590 ~/cubian_memo $ ping 192.168.0.160
+PING 192.168.0.160 (192.168.0.160) 56(84) bytes of data.
+^C
+--- 192.168.0.160 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3022ms
+
+anntony@anntony-Lenovo-B590 ~/cubian_memo $
+
+卡住了，不能ping了，也就是說上面那一條在CubieTruck機器上限制icmp request封包，而且長度是84 bytes的封包的過濾規則生效了
+所以可以知道上面那條規則的 -m length --length 84
+是不包含第二行也就是 Ethernet (eth)的那14 bytes
+所以Linux發出的icmp request封包的MTU大小是84 bytes沒錯
+如果還是不信
+可以在CubieTruck機器上
+把第6條規則刪了
+# iptables -t filter -D INPUT 6
+加上這條規則
+# iptables -t filter -I INPUT 6 -p icmp --icmp-type 8 -m length --length 98 -j DROP
+再看看現在CubieTruck機器上的filter表的INPUT鏈
+root@cubie:~# iptables -t filter -L INPUT -nv --line-number
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     260K   21M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+2        1    60 ACCEPT     all  --  lo     *       127.0.0.1            127.0.0.1           
+3        0     0 ACCEPT     all  --  eth0   *       192.168.0.160        192.168.0.160       
+4        1    60 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+5        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+6        0     0 DROP       icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8 length 98
+7        9   756 ACCEPT     icmp --  *      *       192.168.0.0/24       192.168.0.160       
+root@cubie:~#
+現在CubieTruck機器上的filter表的INPUT鏈會丟棄掉icmp request而且長度必須是98 bytes的封包
+再回到筆記型電腦(192.168.0.12)去ping我們的CubieTruck機(192.168.0.160)
+anntony@anntony-Lenovo-B590 ~/cubian_memo $ ping 192.168.0.160
+PING 192.168.0.160 (192.168.0.160) 56(84) bytes of data.
+64 bytes from 192.168.0.160: icmp_seq=1 ttl=64 time=1.22 ms
+64 bytes from 192.168.0.160: icmp_seq=2 ttl=64 time=1.19 ms
+64 bytes from 192.168.0.160: icmp_seq=3 ttl=64 time=1.94 ms
+^C
+--- 192.168.0.160 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 1.193/1.452/1.944/0.350 ms
+anntony@anntony-Lenovo-B590 ~/cubian_memo $
+超順暢的，icmp封包有去有回，完全沒被防火牆丟棄
+所以這個實驗釐清了我的疑慮
+也就是
+iptables -t filter -I INPUT 6 -p icmp --icmp-type 8 -m length --length 84 -j DROP
+這行規則
+--length 84
+這個數字必須是84才能捕捉到Linux系統發出的icmp request封包(type 8)
+如果你堅持要加上--length 84的話
+即使在Wireshark裡面明明抓到的icmp request封包長度是寫98 bytes，但是要扣掉第二行也就是第二行: Ethernet (eth)的14 bytes
+變成98 - 14 = 84 bytes
+另外由於我的家裡完全沒有Windows機器
+所以我不能實驗書上的過濾Windows機器所發出的icmp request封包的規則
+iptables -t filter -A INPUT -p icmp --icmp-type 8 -m length --length 92 -j DROP
+書上是說Windows系統發出的icmp request封包是92個bytes
+不過我沒得實驗就留給其他朋友去試了
+
+我現在才要吃晚餐，太慘了IT人挨踢人
