@@ -538,4 +538,65 @@ iptables -t filter -A INPUT -p icmp --icmp-type 8 -m length --length 92 -j DROP
 書上是說Windows系統發出的icmp request封包是92個bytes
 不過我沒得實驗就留給其他朋友去試了
 
-我現在才要吃晚餐，太慘了IT人挨踢人
+再來還是icmp封包的實驗
+不過接下來的實驗是有攻擊性的
+請不要對著任何外部的主機的IP作這件事
+如果被攻擊方的主機和發出指令的主機（就是你的主機）是在相同的國家
+而且對方要追究的話，可能會有法律上的責任
+如果你是在租來的VPS上面作這件事，可能會被主機商直接砍掉帳號，而且不會退你錢
+行前的道德教育結束了
+現在來說明一下我的網路環境很簡單
+CubieTruck (192.168.0.160)
+筆記型電腦 (192.168.0.12)
+然後在筆記型電腦上有裝Wireshark
+先把Wireshark打開
+然後在CubieTruck的終端機，以root用戶提示符執行
+# ping -f -s 16384 192.168.0.12
+參數-f是像洪水一樣發出ping request，參數-s是指定待送的icmp資料位元數，這裡設定是16384 bytes = 16 Kbytes
+接著回到筆記型電腦上面看
+十秒鐘不到
+Wireshark裡抓到的封包序號從1瞬間爆增到了29133
+也就是我在十秒之內立刻在筆記型電腦這裡抓到了二萬九千多個封包
+嚇得我趕快在CubieTruck的終端機按下Ctrl + C叫暫停
+接著我仔細看了一下
+抓到的這些封包大多是第一個icmp封包，長度146 bytes
+然後屁股後面會接著11個IPv4的封包，長度是1514 bytes
+這12個封包在Wireshark裡被抓到的時候
+他們的序號是連在一起的
+（連號的鈔票？？）
+序號29119的icmp封包是146 bytes
+然後序號29120到29130這11個IPv4封包的長度都是1514 bytes
+然後我大概計算了一下
+十秒二萬九千個封包聽起來很可怕，這樣其實還好
+我的算法如下
+因為這二萬九千個封包裡有包含了
+192.168.0.160 > 192.168.0.12
+也有
+192.168.0.12 > 192.168.0.160
+有ping過去的icmp request，也有ping回來的response
+為什麼會被拆成12個封包一組？
+(第一個是icmp然後接著11個IPv4封包都是1514 bytes)
+是因為在指令裡
+ping -f -s 16384 192.168.0.12
+我們指定了icmp資料部分的大小是16384 bytes
+但是一個封包好像最多只能裝到1514 bytes的樣子
+所以每一次發出icmp封包都再被拆成了12個封包 (1個icmp封包後面跟著11個IPv4封包)
+所以二萬九千個封包其實只有(29000 除以 12 大約是 2416次，這個數字是發出加上回應的次數 icmp request + icmp response)
+如果只算單向又變成了2416 除以 2 = 1208次
+十秒發出1208次icmp request，也就是一秒才發出120個icmp request
+看起來就沒那麼可怕
+可是因為一個肥肥的16384 bytes的icmp封包被拆成12個封包
+再加上除了有發出(ping request)，然後也有回應(ping response)
+所以變成了那麼可怕的數字，十秒內Wireshark抓到了29133個封包
+不過經過這個實驗，我們可以確實明白
+只是用ping指令發出icmp封包，是有可能癱瘓掉網路的
+如果要加速被攻擊主機的CPU資源消耗，可以改下成
+ping -f -s 0 192.168.0.12
+這樣相同的單位時間裡可以發出更多的icmp request包，因為體積縮小了，-s 0指定了發送的ICMP包頭裡Data的部分是零
+
+以下的規則限制每分鐘最多只能有10個icmp type 8 (icmp request)包進入
+如果超過這個速率，會再被降速成每分鐘只有6個包才能進入
+iptables -t filter -A INPUT -p icmp --icmp-type 8 -m limit --limit 6/m --limit-burst 10 -j ACCEPT
+iptables -t filter -A INPUT -p icmp --icmp-type 8 -j DROP
+
+
