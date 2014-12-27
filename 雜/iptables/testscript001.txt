@@ -599,4 +599,348 @@ ping -f -s 0 192.168.0.12
 iptables -t filter -A INPUT -p icmp --icmp-type 8 -m limit --limit 6/m --limit-burst 10 -j ACCEPT
 iptables -t filter -A INPUT -p icmp --icmp-type 8 -j DROP
 
+值得注意的是，這兩條規則必須要加在
+這一條
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+規則的前面，不然這兩條限制icmp type 8速率的規則就會完全失效
 
+參考資料在
+http://www.spinics.net/lists/netfilter/msg54634.html
+
+裡面老外的重點對話擷取如下:
+# ==========================老外的金玉良言開始=====================================================================
+I have a problem with the limit module. The goal is to limit the incoming
+ICMP echo-requests to max 1/s.
+The following rule does it (as example using the INPUT) :
+
+-A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 1/sec -j ACCEPT
+
+The above is working fine. But when there is a rule for accepting the
+ESTABLISHED packets, the limit does not work:
+
+-A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 1/sec -j ACCEPT
+-A INPUT -m state --state ESTABLISHED -j ACCEPT
+
+With these 2 rules the limit does not work...
+# ==========================老外的金玉良言結束======================================================================
+
+所以這兩條限制icmp type 8流入filter表的INPUT鏈速率的規則
+必須要考慮和所有的防火牆規則一起放在同一個shell script裡的時候
+他們的先後順序
+這是正常的也就是上面那兩行限制icmp type 8流入INPUT鏈速率有正常生效的filter表
+
+root@cubie:~# iptables -t filter -L -nv --line-number
+Chain INPUT (policy DROP 1 packets, 32 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8 limit: avg 6/min burst 10
+2        0     0 DROP       icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+3      923 72086 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+4        0     0 ACCEPT     all  --  lo     *       127.0.0.1            127.0.0.1           
+5        0     0 ACCEPT     all  --  eth0   *       192.168.0.160        192.168.0.160       
+6        1    60 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+7        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 6 packets, 984 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+root@cubie:~#
+ 
+你可以看到即使我的filter表的INPUT鏈預設的規則是DROP
+但是我還是在INPUT鏈第2條的地方放上了丟棄所有的icmp type 8封包的規則
+在CubieTruck機器上（192.168.0.160）生效的filter表的INPUT鏈如上
+然後我們在筆記型電腦（192.168.0.12）來ping看看，到底限速規則是不是真的生效了？
+
+anntony@anntony-Lenovo-B590 ~ $ ping 192.168.0.160
+PING 192.168.0.160 (192.168.0.160) 56(84) bytes of data.
+64 bytes from 192.168.0.160: icmp_seq=1 ttl=64 time=43.4 ms
+64 bytes from 192.168.0.160: icmp_seq=2 ttl=64 time=4.36 ms
+64 bytes from 192.168.0.160: icmp_seq=3 ttl=64 time=1.97 ms
+64 bytes from 192.168.0.160: icmp_seq=4 ttl=64 time=2.82 ms
+64 bytes from 192.168.0.160: icmp_seq=5 ttl=64 time=1.96 ms
+64 bytes from 192.168.0.160: icmp_seq=6 ttl=64 time=2.05 ms
+64 bytes from 192.168.0.160: icmp_seq=7 ttl=64 time=1.86 ms
+64 bytes from 192.168.0.160: icmp_seq=8 ttl=64 time=2.00 ms
+64 bytes from 192.168.0.160: icmp_seq=9 ttl=64 time=1.72 ms
+64 bytes from 192.168.0.160: icmp_seq=10 ttl=64 time=1.84 ms
+64 bytes from 192.168.0.160: icmp_seq=12 ttl=64 time=1.80 ms
+64 bytes from 192.168.0.160: icmp_seq=22 ttl=64 time=2.27 ms
+64 bytes from 192.168.0.160: icmp_seq=32 ttl=64 time=2.10 ms
+64 bytes from 192.168.0.160: icmp_seq=41 ttl=64 time=2.03 ms
+64 bytes from 192.168.0.160: icmp_seq=51 ttl=64 time=1.81 ms
+^C
+--- 192.168.0.160 ping statistics ---
+52 packets transmitted, 15 received, 71% packet loss, time 51164ms
+rtt min/avg/max/mdev = 1.720/4.938/43.448/10.311 ms
+anntony@anntony-Lenovo-B590 ~ $
+看著上面的終端機輸出，到第10個ping回應的時候，再下一次就開始被限制速度了
+在上面我們設定了每分鐘超過十個包之後要再降到每分鐘6個包的速率
+也就是每隔十秒防火牆的filter表的INPUT鏈才會收一個icmp request封包
+
+你可以試著去掉第二條，用這行指令可以去掉INPUT 鏈的第二條
+# iptables -t filter -D INPUT 2
+然後觀察此時的CubieTruck機器的filter表的INPUT鏈
+是否會再繼續限制icmp type 8封包的流入速率？
+
+再次強調
+上面的限制icmp request封包流入速率的規則
+要
+iptables -t filter -A INPUT -p icmp --icmp-type 8 -m limit --limit 6/m --limit-burst 10 -j ACCEPT
+iptables -t filter -A INPUT -p icmp --icmp-type 8 -j DROP
+這兩條一起使用才有效
+注意他們兩個的先後順序
+而且上面兩條一定要放在
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+這一條規則的前面
+否則即使你的filter表的INPUT鏈預設規則已經被設成了DROP
+icmp request封包流入的時候還是不會被限制速度
+就像什麼事都沒發生一樣
+
+還有如果發送端停止對防火牆主機發送icmp request包
+那麼假如防火牆主機已經進入限制速度狀態的6/m也就是每分鐘只允許6個icmp request包流入的狀態
+在發送端停止發送icmp request封包之後的6 X 10 = 60秒
+在60秒之後又會恢復成每分鐘最多可以10個icmp request包流入的狀態
+60秒是第一行規則的 6/m的那個6，乘以--limit-burst的10得來的
+不過這裡有點怪怪的
+為什麼不是6 X 10 = 60分鐘？規則裡寫的時間單位是分鐘啊？？？
+
+繼續
+接著同樣以上面的語法來推測
+如果我需要CubieTruck機器上運行的nginx服務器受到保護
+我希望在每秒訪問我本機tcp port 80的要求建立新的HTTP連線的SYN_SENT封包
+在速率超過每秒40個的時候
+就自動降速到只接受每秒20個
+那麼防火牆規則應該怎麼寫呢？
+如下
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 --syn -m state --state NEW -m limit --limit 20/s --limit-burst 40 -j ACCEPT
+iptables -t filter -A INPUT -d 192.168.0.160 -p tcp --dport 80 --syn -m state --state NEW -j DROP
+和上面的限制icmp type 8封包的那兩條規則一樣
+這兩條一樣是要放在
+這一條
+iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+規則的前面才可以發揮限速的功能
+
+然後我又想到如果這樣
+那麼我要重新編排CubieTruck本機防火牆規則的順序
+改成這樣
+這是我的新的/root/firewall.sh
+
+#!/bin/bash
+# ============ Set your network parameters here ===================================================
+iptables=/sbin/iptables
+loopback=127.0.0.1
+local=192.168.0.160
+lan=192.168.0.0/24
+# =================================================================================================
+$iptables -t filter -F
+$iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
+$iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 36000 --syn -m state --state NEW -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -m limit --limit 20/s --limit-burst 40 -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -j DROP
+$iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
+$iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$iptables -t filter -P INPUT DROP
+$iptables -t filter -L -n --line-number
+# =================================================================================================
+
+接下來要測試限速規則是否有生效
+我想一下要怎麼實驗會比較客觀
+這樣好了
+（一）撤掉CubieTruck機器上的所有防火牆規則，用httperf工具每秒發出60個request，持續20秒，觀察一下可以得到幾個正常的回應（status code 200）
+（二）加上防火牆規則，但是不限制HTTP Request封包流入的速度，用httperf工具每秒發出60個request，持續20秒，觀察一下可以得到幾個正常的回應（status code 200）
+（三）加上防火牆規則，並限制每秒最多可以流入40個帶有SYN_SENT的HTTP Request，如果超過此速率，就再降速成每秒只允許20個這樣的包流入，
+使用httperf工具同上步驟，並觀察可以得到幾個正常的回應 (status code 200)
+
+實驗開始
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+（一）撤掉CubieTruck機器上的所有防火牆規則，用httperf工具每秒發出100個request，持續30秒，觀察一下可以得到幾個正常的回應（status code 200）
+
+在CubieTruck機器上，把防火牆規則完全撤掉，執行
+root@cubie:~# iptables -t filter -P INPUT ACCEPT
+root@cubie:~# iptables -t filter -F INPUT
+root@cubie:~# iptables -t filter -L -nv --line-number
+Chain INPUT (policy ACCEPT 81 packets, 6148 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 41 packets, 4052 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+root@cubie:~# 
+
+在筆記型電腦上，執行
+anntony-Lenovo-B590 ~ # httperf --server 192.168.0.160 --port 80 --uri /index.php --rate 60 --num-conn 1200 --num-call 1 --timeout 5
+httperf --timeout=5 --client=0/1 --server=192.168.0.160 --port=80 --uri=/index.php --rate=60 --send-buffer=4096 --recv-buffer=16384 --num-conns=1200 --num-calls=1
+httperf: warning: open file limit > FD_SETSIZE; limiting max. # of open files to FD_SETSIZE
+Maximum connect burst length: 1
+
+Total: connections 1200 requests 865 replies 737 test-duration 26.374 s
+
+Connection rate: 45.5 conn/s (22.0 ms/conn, <=321 concurrent connections)
+Connection time [ms]: min 32.7 avg 4389.9 max 8010.9 median 4667.5 stddev 1780.5
+Connection time [ms]: connect 702.1
+Connection length [replies/conn]: 1.000
+
+Request rate: 32.8 req/s (30.5 ms/req)
+Request size [B]: 75.0
+
+Reply rate [replies/s]: min 27.6 avg 27.8 max 28.4 stddev 0.4 (5 samples)
+Reply time [ms]: response 3622.6 transfer 97.5
+Reply size [B]: header 195.0 content 70191.0 footer 2.0 (total 70388.0)
+Reply status: 1xx=0 2xx=737 3xx=0 4xx=0 5xx=0
+
+CPU time [s]: user 1.54 system 24.77 (user 5.8% system 93.9% total 99.8%)
+Net I/O: 1923.2 KB/s (15.8*10^6 bps)
+
+Errors: total 463 client-timo 463 socket-timo 0 connrefused 0 connreset 0
+Errors: fd-unavail 0 addrunavail 0 ftab-full 0 other 0
+anntony-Lenovo-B590 ~ # 
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+（二）加上防火牆規則，但是不限制HTTP Request封包流入的速度，用httperf工具每秒發出60個request，持續20秒，觀察一下可以得到幾個正常的回應（status code 200）
+
+在CubieTruck機器上，用root用戶登入
+然後修改/root/firewall.sh
+修改成舊的還沒有限制tcp 80 port流入速率的樣子
+如下
+#!/bin/bash
+# ============ Set your network parameters here ===================================================
+iptables=/sbin/iptables
+loopback=127.0.0.1
+local=192.168.0.160
+lan=192.168.0.0/24
+# =================================================================================================
+$iptables -t filter -F
+$iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
+$iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 36000 --syn -m state --state NEW -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -j ACCEPT
+$iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
+$iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$iptables -t filter -P INPUT DROP
+$iptables -t filter -L -n --line-number
+# =================================================================================================
+再執行它一次讓它裡面寫的防火牆規則生效
+root@cubie:~# /root/firewall.sh 
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination         
+1    ACCEPT     all  --  127.0.0.1            127.0.0.1           
+2    ACCEPT     all  --  192.168.0.160        192.168.0.160       
+3    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+4    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+5    ACCEPT     icmp --  192.168.0.0/24       192.168.0.160       
+6    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+root@cubie:~# 
+
+到筆記型電腦上，一樣執行
+anntony-Lenovo-B590 ~ # httperf --server 192.168.0.160 --port 80 --uri /index.php --rate 60 --num-conn 1200 --num-call 1 --timeout 5
+httperf --timeout=5 --client=0/1 --server=192.168.0.160 --port=80 --uri=/index.php --rate=60 --send-buffer=4096 --recv-buffer=16384 --num-conns=1200 --num-calls=1
+httperf: warning: open file limit > FD_SETSIZE; limiting max. # of open files to FD_SETSIZE
+Maximum connect burst length: 4
+
+Total: connections 1200 requests 1052 replies 1015 test-duration 25.439 s
+
+Connection rate: 47.2 conn/s (21.2 ms/conn, <=288 concurrent connections)
+Connection time [ms]: min 90.3 avg 3298.5 max 7922.3 median 3418.5 stddev 1647.0
+Connection time [ms]: connect 527.9
+Connection length [replies/conn]: 1.000
+
+Request rate: 41.4 req/s (24.2 ms/req)
+Request size [B]: 75.0
+
+Reply rate [replies/s]: min 38.6 avg 39.7 max 40.6 stddev 0.8 (5 samples)
+Reply time [ms]: response 2712.5 transfer 82.6
+Reply size [B]: header 195.0 content 70191.0 footer 2.0 (total 70388.0)
+Reply status: 1xx=0 2xx=1015 3xx=0 4xx=0 5xx=0
+
+CPU time [s]: user 1.77 system 23.59 (user 7.0% system 92.7% total 99.7%)
+Net I/O: 2745.6 KB/s (22.5*10^6 bps)
+
+Errors: total 185 client-timo 185 socket-timo 0 connrefused 0 connreset 0
+Errors: fd-unavail 0 addrunavail 0 ftab-full 0 other 0
+anntony-Lenovo-B590 ~ #
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+（三）加上防火牆規則，並限制每秒最多可以流入40個帶有SYN_SENT的HTTP Request，如果超過此速率，就再降速成每秒只允許20個這樣的包流入，
+使用httperf工具同上步驟，並觀察可以得到幾個正常的回應 (status code 200)
+
+然後在CubieTruck機器上，把/root/firewall.sh改成有限制tcp port 80速度的
+如下
+#!/bin/bash
+# ============ Set your network parameters here ===================================================
+iptables=/sbin/iptables
+loopback=127.0.0.1
+local=192.168.0.160
+lan=192.168.0.0/24
+# =================================================================================================
+$iptables -t filter -F
+$iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
+$iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 36000 --syn -m state --state NEW -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -m limit --limit 20/s --limit-burst 40 -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -j DROP
+$iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
+$iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$iptables -t filter -P INPUT DROP
+$iptables -t filter -L -n --line-number
+# =================================================================================================
+
+接著再執行它一次，讓寫在裡面的防火牆規則生效
+root@cubie:~# /root/firewall.sh 
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination         
+1    ACCEPT     all  --  127.0.0.1            127.0.0.1           
+2    ACCEPT     all  --  192.168.0.160        192.168.0.160       
+3    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:36000flags: 0x17/0x02 state NEW
+4    ACCEPT     tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW limit: avg 20/sec burst 40
+5    DROP       tcp  --  0.0.0.0/0            192.168.0.160        tcp dpt:80flags: 0x17/0x02 state NEW
+6    ACCEPT     icmp --  192.168.0.0/24       192.168.0.160       
+7    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination         
+root@cubie:~#
+
+然後在筆記型電腦上，執行
+anntony-Lenovo-B590 ~ # httperf --server 192.168.0.160 --port 80 --uri /index.php --rate 60 --num-conn 1200 --num-call 1 --timeout 5
+httperf --timeout=5 --client=0/1 --server=192.168.0.160 --port=80 --uri=/index.php --rate=60 --send-buffer=4096 --recv-buffer=16384 --num-conns=1200 --num-calls=1
+httperf: warning: open file limit > FD_SETSIZE; limiting max. # of open files to FD_SETSIZE
+Maximum connect burst length: 1
+
+Total: connections 1200 requests 499 replies 499 test-duration 24.934 s
+
+Connection rate: 48.1 conn/s (20.8 ms/conn, <=206 concurrent connections)
+Connection time [ms]: min 31.4 avg 513.6 max 3094.8 median 64.5 stddev 849.4
+Connection time [ms]: connect 344.1
+Connection length [replies/conn]: 1.000
+
+Request rate: 20.0 req/s (50.0 ms/req)
+Request size [B]: 75.0
+
+Reply rate [replies/s]: min 20.0 avg 22.0 max 27.6 stddev 3.8 (4 samples)
+Reply time [ms]: response 133.2 transfer 36.4
+Reply size [B]: header 195.0 content 70191.0 footer 2.0 (total 70388.0)
+Reply status: 1xx=0 2xx=499 3xx=0 4xx=0 5xx=0
+
+CPU time [s]: user 2.43 system 22.45 (user 9.7% system 90.0% total 99.8%)
+Net I/O: 1377.1 KB/s (11.3*10^6 bps)
+
+Errors: total 701 client-timo 701 socket-timo 0 connrefused 0 connreset 0
+Errors: fd-unavail 0 addrunavail 0 ftab-full 0 other 0
+anntony-Lenovo-B590 ~ #
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+對照上面三組的實驗數據，可以知道我們加進的防火牆規則，真的把流入filter表INPUT鏈的tcp port 80有SYN_SENT的這種封包限制速度了
+太累了
