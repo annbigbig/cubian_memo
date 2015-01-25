@@ -1,0 +1,195 @@
+安裝並設定phpmyadmin
+
+工作列表
+1.下載phpmyadmin並解開到適當目錄
+2.設定nginx服務器
+3.設定客戶端機器的/etc/hosts
+4.第一次連入phpmyadmin設定網頁介面
+
+細節
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+1.下載phpmyadmin並解開到適當目錄
+
+在cubian機器上
+下載phpmyadmin
+下載的網址是
+http://www.phpmyadmin.net/home_page/index.php
+
+下載後得到一個
+phpMyAdmin-4.3.8-all-languages.zip
+我將它複製到/tmp目錄中
+然後執行下列指令解壓縮它
+# unzip /tmp/phpMyAdmin-4.3.8-all-languages.zip -d /tmp
+
+將整個目錄裡的所有檔案和子目錄的擁有人變更成root，而群組變更成www-data
+# chown -R root:www-data /tmp/phpMyAdmin-4.3.8-all-languages
+
+將所有檔案及子目錄的擁有人權限及群組權限加上w
+# chmod -R u+w /tmp/phpMyAdmin-4.3.8-all-languages
+# chmod -R g+w /tmp/phpMyAdmin-4.3.8-all-languages
+
+整個目錄移到/usr/local/nginx目錄下面
+並更名為phpmyadmin-4.3.8
+# mv /tmp/phpMyAdmin-4.3.8-all-languages /usr/local/nginx/phpmyadmin-4.3.8
+
+在/usr/local/nginx目錄下作一個叫作phpmyadmin的symlink指向phpmyadmin-4.3.8
+# ln -s /usr/local/nginx/phpmyadmin-4.3.8 /usr/local/nginx/phpmyadmin
+ 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+2.設定nginx服務器
+
+修改我的/usr/local/nginx/conf/nginx.conf
+在最後面加入這個區塊
+
+# testing virtual host - www.phpmyadmin.com.tw
+    server {
+      server_name www.phpmyadmin.com.tw;
+      listen 80;
+      root /usr/local/nginx/phpmyadmin;
+      access_log  logs/phpmyadmin.access.log combined;
+      error_log   logs/phpmyadmin.error.log;
+
+      location / {
+         index index.php index.html index.htm;
+      }
+
+       # follow the PHP official website's instructions
+      location ~* \.php$ {
+           fastcgi_index   index.php;
+           fastcgi_pass    127.0.0.1:9000;
+           include         fastcgi_params;
+           fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+           fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+      }
+    }
+
+改完之後
+檢查nginx.conf設定檔的語法是否正確
+# cd /usr/local/nginx
+# sbin/nginx -t -c conf/nginx.conf
+
+如果看到終端機回答
+nginx: the configuration file /usr/local/nginx-1.6.2/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is successful
+
+就表示沒問題
+可以重新啟動nginx服務器，讓新的設定值生效
+執行
+# service nginx restart
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.設定客戶端機器的/etc/hosts
+
+客戶端機器就是筆記型電腦
+修改它的/etc/hosts
+
+這裡直接給出我完整的/etc/hosts
+127.0.0.1       localhost
+127.0.1.1       anntony-Lenovo-B590
+192.168.0.166   banana banana2.com
+192.168.0.162   cubie tonycha.com
+192.168.0.160   www.cubian.ann01.big www.phpmyadmin.com.tw
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+重點是192.168.0.160的那一行
+如果我在筆記型電腦上要
+# ping www.phpmyadmin.com.tw
+PING www.cubian.ann01.big (192.168.0.160) 56(84) bytes of data.
+64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=1 ttl=64 time=1.38 ms
+64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=2 ttl=64 time=1.15 ms
+^C
+--- www.cubian.ann01.big ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 1.153/1.268/1.383/0.115 ms
+
+對，我的筆記型電腦現在就把www.phpmyadmin.com.tw這個域名對應成192.168.0.160
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+
+
+
+
+
+
+
+
+
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+關於php.ini
+
+設定好nginx服務器並重新啟動服務之後
+我快樂的在筆記型電腦上打開瀏覽器
+查看網址
+http://www.phpmyadmin.com.tw/
+
+結果我得到了
+Fatal error: Call to undefined function mb_detect_encoding() in /usr/local/nginx-1.6.2/phpmyadmin-4.3.8/libraries/php-gettext/gettext.inc on line 177
+
+我把這一串錯誤訊息的前半段當作關鍵字
+搜尋了Google
+我看到了這一篇
+http://stackoverflow.com/questions/22271260/fatal-error-call-to-undefined-function-mb-detect-encoding-in-c-apache-htdocs
+
+所以我照著它講的
+修正了我的php.ini
+# vi /usr/local/php/lib/php.ini
+
+然後取消這四行前面的分號;
+extension=php_gd2.dll
+extension=php_mbstring.dll
+extension=php_exif.dll 
+extension=php_mysqli.dll
+
+接著重新啟動php-fpm
+
+
+結果慘劇發生了
+root@cubie:/usr/local/php/lib# service php-fpm restart
+Gracefully shutting down php-fpm . done
+Starting php-fpm [26-Jan-2015 02:31:50] NOTICE: PHP message: PHP Warning:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_gd2.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_gd2.dll: cannot open shared object file: No such file or directory in Unknown on line 0
+<br />
+<b>Warning</b>:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_gd2.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_gd2.dll: cannot open shared object file: No such file or directory in <b>Unknown</b> on line <b>0</b><br />
+[26-Jan-2015 02:31:50] NOTICE: PHP message: PHP Warning:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mbstring.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mbstring.dll: cannot open shared object file: No such file or directory in Unknown on line 0
+<br />
+<b>Warning</b>:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mbstring.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mbstring.dll: cannot open shared object file: No such file or directory in <b>Unknown</b> on line <b>0</b><br />
+[26-Jan-2015 02:31:50] NOTICE: PHP message: PHP Warning:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_exif.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_exif.dll: cannot open shared object file: No such file or directory in Unknown on line 0
+<br />
+<b>Warning</b>:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_exif.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_exif.dll: cannot open shared object file: No such file or directory in <b>Unknown</b> on line <b>0</b><br />
+[26-Jan-2015 02:31:50] NOTICE: PHP message: PHP Warning:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mysqli.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mysqli.dll: cannot open shared object file: No such file or directory in Unknown on line 0
+<br />
+<b>Warning</b>:  PHP Startup: Unable to load dynamic library '/usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mysqli.dll' - /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/php_mysqli.dll: cannot open shared object file: No such file or directory in <b>Unknown</b> on line <b>0</b><br />
+ done
+root@cubie:/usr/local/php/lib#
+
+沒有辦法正常的重新啟動php-fpm
+出現了無法載入動態函式庫
+php_gd2.dll
+php_mbstring.dll
+php_exif.dll
+php_mysqli.dll
+因為它們根本就不存在於我的Cubian機器裡
+我大概預想到是什麼問題了
+該不會又要重新編譯php-fpm吧？
+因為我少編了什麼函式庫進去的樣子才會這樣幹幹叫
+然後我再用gd2、mbstring、mysqli當關鍵字搜尋了Google
+結果我搜到
+http://www.cnblogs.com/simpman/p/4196051.html
+
+而使用關鍵字php-fpm configure options gd2 mysqli pdo，我搜到
+https://www.howtoforge.com/how-to-build-php-5.5-php-fpm-and-fastcgi-with-ioncube-loader-zend-opcache-and-apcu-for-ispconfig3-debian-wheezy-p2
+http://www.ondrejsimek.com/blog/running-multiple-php-versions-is-so-easy-with-fastcgi/
+
+我又要重新編譯php了
+而且我發現我gd2 mysqli pdo都沒有
+沒有pdo好像不能讓php直接去連mysql資料庫的樣子
+
+
+http://php.net/manual/en/ref.pdo-mysql.php
