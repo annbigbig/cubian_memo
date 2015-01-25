@@ -173,3 +173,17 @@ anntony-Lenovo-B590 ~ #
 你打開Vnc Viewer朝著127.0.0.1:5900這個地址連線就大功告成了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+只要建立ssh tunnel，不需要login shell的指令
+$ ssh -p36000 -i ./cubie@cubian.private.key -L 5900:127.0.0.1:5900 cubie@192.168.0.160 -N
+
+注意最後面加上的-N參數
+和上面建立ssh tunnel的指令不同的是
+上面的除了把cubian機器的127.0.0.1:5900綁到本地機(筆記型電腦) 的5900端口
+還會多開一個cubian機器的login shell
+如果覺得那個login shell很多餘
+(此時並沒有要操作Cubian機器，只是要建立ssh tunnel而已)
+可以加上-N參數
+
+參考資料
+http://www.linuxhorizon.ro/ssh-tunnel.html
+
