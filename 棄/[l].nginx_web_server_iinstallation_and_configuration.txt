@@ -281,7 +281,7 @@ http://www.nginx.cn/231.html
 # apt-get install libfcgi-dev libfcgi0ldbl libjpeg62-dbg libmcrypt-dev libssl-dev libc-client2007e libc-client2007e-dev libxml2-dev
 
 接著我進入Cubian的mate圖形介面，到php官網，
-把php-5.5.21.tar.gz下載到/usr/local/src目錄裡
+把php-5.5.19.tar.gz下載到/usr/local/src目錄裡
 連結在這裡
 http://php.net/downloads.php
 （我很想在終端機直接用wget就下載，可是不成功）
@@ -304,9 +304,6 @@ http://php.net/downloads.php
 先安裝libmhash函式庫，這個用apt套件庫裡的就行了
 # apt-get install libmhash*
 
-libbz2-dev套件也裝上，這是為了稍後php編譯時會用到
-# apt-get install libbz2-dev
-
 然後就
 # cd /usr/local/src
 # tar zxvf mcrypt-2.6.8.tar.gz
@@ -316,52 +313,17 @@ libbz2-dev套件也裝上，這是為了稍後php編譯時會用到
 # make check
 # make install
 
-curl也要安裝，去官網下載
-網址是
-http://curl.haxx.se/download.html
-安裝的官方參考網頁是
-http://curl.haxx.se/docs/install.html
-下載得到的
-curl-7.40.0.tar.gz
-放在/usr/local/src目錄下
-然後
-# cd /usr/local/src
-# tar zxvf ./curl-7.40.0.tar.gz
-# cd curl-7.40.0
-# 
-
 接下來是php的安裝步驟
-參考資料
-http://howtolamp.com/lamp/php/5.5/installing/
-
 解壓縮、切換目錄、組態、編譯、測試、安裝
 # cd /usr/local/src
-# tar zxvf php-5.5.21.tar.gz
-# cd php-5.5.21
-
-把所有的configure選項列出然後存在/tmp/conf-options.txt裡我瞧瞧
-# ./configure -h > /tmp/conf-options.txt
-# vi /tmp/conf-options.txt
-
-上工了
-# ./configure --prefix=/usr/local/php-5.5.21 \
---enable-opcache --enable-fpm \
---with-mysql --with-mysqli --with-pdo-mysql --with-mysql-sock=/run/mysqld/mysqld.sock \
---with-openssl --with-openssl-dir=/usr/local/openssl-1.0.1j --with-kerberos \
---with-mhash --with-mcrypt=/usr/local/mcrypt-2.6.8 --enable-bcmath --with-gmp \
---enable-shmop --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm \
---enable-soap --enable-wddx --with-xmlrpc --with-readline --enable-calendar \
---with-curl --with-gettext \
---enable-mbstring \
---with-zlib --with-zlib-dir=/usr/local/src/zlib-1.2.8 \
---with-bz2 --enable-zip --enable-exif --with-gd
-
-接著就出現了
-checking for cURL support... yes
-checking for cURL in default path... not found
-configure: error: Please reinstall the libcurl distribution -
-    easy.h should be in <curl-dir>/include/curl/
-root@cubie:/usr/local/src/php-5.5.21#
+# tar zxvf php-5.5.19.tar.gz
+# cd php-5.5.19
+# ./configure --prefix=/usr/local/php-5.5.19 \
+--enable-fpm \
+--enable-zip \
+--with-mysql \
+--with-openssl=/usr/local/openssl-1.0.1j \
+--with-mcrypt=/usr/local/mcrypt-2.6.8
 
 這是configure成功之後的最後一小段輸出
 +--------------------------------------------------------------------+
@@ -645,47 +607,3 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 
 打完收工
-
-
-
-
-
-
-
-
-
-＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-附錄之：整個地球只有我遇到這個問題嗎？幹
-因為我要把mbstring的功能編譯進php裡
-而mbstring需要一個函式庫叫作libmbfl
-它的原始碼放在github上面，所以先把它拉下來編譯並安裝
-# apt-get install automake
-# apt-get install gawk
-# cd /usr/local/src
-# git clone https://github.com/moriyoshi/libmbfl.git
-# cd libmbfl
-# ./buildconf
-# ./configure -h
-# ./configure --prefix=/usr/local/libmbfl
-# make
-# make install
-經過以上的步驟後
-應該就會將libmbfl安裝在/usr/local/libmbfl目錄裡
-理論上是這樣
-但是只能運行到make
-就出現了錯誤訊息
-Making all in mbfl
-make[2]: Entering directory `/usr/local/src/libmbfl/mbfl'
-gawk -v TABLE_NAME=mbfl_eaw_table -f mk_eaw_tbl.awk EastAsianWidth.txt > eaw_table.h
-gawk: mk_eaw_tbl.awk:13: fatal: cannot open file `EastAsianWidth.txt' for reading (No such file or directory)
-make[2]: *** [eaw_table.h] Error 2
-make[2]: Leaving directory `/usr/local/src/libmbfl/mbfl'
-make[1]: *** [all-recursive] Error 1
-make[1]: Leaving directory `/usr/local/src/libmbfl'
-make: *** [all] Error 2
-root@cubie:/usr/local/src/libmbfl#
-上網用Google搜尋gawk: mk_eaw_tbl.awk:13: fatal: cannot open file `EastAsianWidth.txt' 
-只有兩個頁面
-投降
-幹幹幹幹幹
-＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊

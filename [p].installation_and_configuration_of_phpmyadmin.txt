@@ -149,7 +149,8 @@ extension=php_exif.dll
 extension=php_mysqli.dll
 
 接著重新啟動php-fpm
-
+# service php-fpm status
+# service php-fpm restart
 
 結果慘劇發生了
 root@cubie:/usr/local/php/lib# service php-fpm restart
@@ -186,6 +187,12 @@ http://www.cnblogs.com/simpman/p/4196051.html
 而使用關鍵字php-fpm configure options gd2 mysqli pdo，我搜到
 https://www.howtoforge.com/how-to-build-php-5.5-php-fpm-and-fastcgi-with-ioncube-loader-zend-opcache-and-apcu-for-ispconfig3-debian-wheezy-p2
 http://www.ondrejsimek.com/blog/running-multiple-php-versions-is-so-easy-with-fastcgi/
+
+有點詳細
+http://howtolamp.com/lamp/php/5.5/installing/
+
+稍早前看過的php-fpm簡體中文安裝說明
+http://www.nginx.cn/231.html
 
 我又要重新編譯php了
 而且我發現我gd2 mysqli pdo都沒有
