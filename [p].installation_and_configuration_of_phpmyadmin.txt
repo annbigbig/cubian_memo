@@ -4,7 +4,8 @@
 1.下載phpmyadmin並解開到適當目錄
 2.設定nginx服務器
 3.設定客戶端機器的/etc/hosts
-4.第一次連入phpmyadmin設定網頁介面
+4.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
+5.使用文字編輯器設定config.inc.php
 
 細節
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
@@ -111,11 +112,17 @@ rtt min/avg/max/mdev = 1.153/1.268/1.383/0.115 ms
 對，我的筆記型電腦現在就把www.phpmyadmin.com.tw這個域名對應成192.168.0.160
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+4.第一次連入phpmyadmin設定網頁介面
 
+網路環境概述
+筆記型電腦：192.168.0.12
+Cubian機器（安裝了nginx與mariadb）：192.168.0.160
+mariadb運行於Cubian機器的127.0.0.1的3306端口
+nginx服務器運行於Cubian機器的80端口，Listen on 0.0.0.0:80
 
-
-
-
+在我的筆記型電腦打開Chrome瀏覽器
+連接網址
+http://www.phpmyadmin.com.tw/phpmyadmin/setup
 
 
 

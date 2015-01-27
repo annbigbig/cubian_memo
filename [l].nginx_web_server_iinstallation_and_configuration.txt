@@ -279,6 +279,10 @@ http://www.nginx.cn/231.html
 先安裝依賴套件
 # apt-get install build-essential
 # apt-get install libfcgi-dev libfcgi0ldbl libjpeg62-dbg libmcrypt-dev libssl-dev libc-client2007e libc-client2007e-dev libxml2-dev
+# apt-get install libbz2-dev
+# apt-get install libpng12-dev
+# apt-get install libgmp-dev
+# apt-get install libreadline6-dev
 
 接著我進入Cubian的mate圖形介面，到php官網，
 把php-5.5.21.tar.gz下載到/usr/local/src目錄裡
@@ -304,9 +308,6 @@ http://php.net/downloads.php
 先安裝libmhash函式庫，這個用apt套件庫裡的就行了
 # apt-get install libmhash*
 
-libbz2-dev套件也裝上，這是為了稍後php編譯時會用到
-# apt-get install libbz2-dev
-
 然後就
 # cd /usr/local/src
 # tar zxvf mcrypt-2.6.8.tar.gz
@@ -315,20 +316,6 @@ libbz2-dev套件也裝上，這是為了稍後php編譯時會用到
 # make
 # make check
 # make install
-
-curl也要安裝，去官網下載
-網址是
-http://curl.haxx.se/download.html
-安裝的官方參考網頁是
-http://curl.haxx.se/docs/install.html
-下載得到的
-curl-7.40.0.tar.gz
-放在/usr/local/src目錄下
-然後
-# cd /usr/local/src
-# tar zxvf ./curl-7.40.0.tar.gz
-# cd curl-7.40.0
-# 
 
 接下來是php的安裝步驟
 參考資料
@@ -351,19 +338,19 @@ http://howtolamp.com/lamp/php/5.5/installing/
 --with-mhash --with-mcrypt=/usr/local/mcrypt-2.6.8 --enable-bcmath --with-gmp \
 --enable-shmop --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm \
 --enable-soap --enable-wddx --with-xmlrpc --with-readline --enable-calendar \
---with-curl --with-gettext \
---enable-mbstring \
+--with-gettext --enable-mbstring \
 --with-zlib --with-zlib-dir=/usr/local/src/zlib-1.2.8 \
 --with-bz2 --enable-zip --enable-exif --with-gd
 
-接著就出現了
-checking for cURL support... yes
-checking for cURL in default path... not found
-configure: error: Please reinstall the libcurl distribution -
-    easy.h should be in <curl-dir>/include/curl/
-root@cubie:/usr/local/src/php-5.5.21#
+./configure的過程也許不會那麼順利，出現錯誤訊息的時候
+通常是忘了安裝什麼函式庫，可以參考這個網友寫的
+http://lyp.cn/350_how-to-fix-php-compile-errors
 
 這是configure成功之後的最後一小段輸出
+Generating files
+configure: creating ./config.status
+creating main/internal_functions.c
+creating main/internal_functions_cli.c
 +--------------------------------------------------------------------+
 | License:                                                           |
 | This software is subject to the PHP License, available in this     |
@@ -392,48 +379,114 @@ config.status: creating ext/phar/phar.1
 config.status: creating ext/phar/phar.phar.1
 config.status: creating main/php_config.h
 config.status: executing default commands
+root@cubie:/usr/local/src/php-5.5.21# 
 
-編譯、測試、安裝
+編譯
 # make
+
+編譯完成，看起來是成功的，但是最後幾行的輸出讓我有點毛毛的
+ml2 -lxml2 -lcrypt -lxml2 -lxml2 -lxml2 -lxml2 -lxml2 -lssl -lcrypto -lcrypt  -o sapi/cgi/php-cgi
+Generating phar.php
+Generating phar.phar
+PEAR package PHP_Archive not installed: generated phar will require PHP's phar extension be enabled.
+directorytreeiterator.inc
+pharcommand.inc
+invertedregexiterator.inc
+directorygraphiterator.inc
+clicommand.inc
+phar.inc
+
+Build complete.
+Don't forget to run 'make test'.
+它說我沒安裝PEAR package PHP_Archive
+但是上次php-5.5.19的時候我也沒裝，一樣活得好好的
+暫時忽略它，如果真的有什麼問題
+大不了再重新編譯
+
+然後老老實實測試一下
 # make test
+
+測試的結果最後幾行漆8毛這樣是有過還沒過？
+Bug #67296 (filter_input doesn't validate variables) [ext/filter/tests/bug49184.phpt]  XFAIL REASON: See Bug #49184
+zend multibyte (2) [ext/mbstring/tests/zend_multibyte-02.phpt]  XFAIL REASON: https://bugs.php.net/bug.php?id=66582
+zend multibyte (6) [ext/mbstring/tests/zend_multibyte-06.phpt]  XFAIL REASON: https://bugs.php.net/bug.php?id=66582
+zend multibyte (7) [ext/mbstring/tests/zend_multibyte-07.phpt]  XFAIL REASON: https://bugs.php.net/bug.php?id=66582
+zend multibyte (9) [ext/mbstring/tests/zend_multibyte-09.phpt]  XFAIL REASON: https://bugs.php.net/bug.php?id=66582
+Bug #45712 (NaN/INF comparison) [ext/standard/tests/math/bug45712.phpt]  XFAIL REASON: Bug 45712 not fixed yet.
+=====================================================================
+
+=====================================================================
+FAILED TEST SUMMARY
+---------------------------------------------------------------------
+function with many parameters [tests/func/010.phpt]
+Bug #41523 (strtotime('0000-00-00 00:00:00') is parsed as 1999-11-30) (32 bit) [ext/date/tests/bug41523.phpt]
+Test getdate() function : usage variation - Passing high positive and negative float values to timestamp. [ext/date/tests/getdate_variation7.phpt]
+Test localtime() function : usage variation - Passing higher positive and negetive float values to timestamp. [ext/date/tests/localtime_variation3.phpt]
+Bug #66731: file: extensive backtraking [ext/fileinfo/tests/cve-2014-3538.phpt]
+Testing xpath() with invalid XML [ext/simplexml/tests/SimpleXMLElement_xpath.phpt]
+Multicast support: IPv4 receive options [ext/sockets/tests/mcast_ipv4_recv.phpt]
+recvmsg(): receive SCM_CREDENTIALS messages [ext/sockets/tests/socket_cmsg_rights.phpt]
+socket_import_stream: Test with multicasting [ext/sockets/tests/socket_import_stream-3.phpt]
+Bug #64146 (serialize incorrectly saving objects when they are cloned) [ext/standard/tests/serialize/bug64146.phpt]
+=====================================================================
+
+=====================================================================
+WARNED TEST SUMMARY
+---------------------------------------------------------------------
+zend multibyte (8) [ext/mbstring/tests/zend_multibyte-08.phpt] (warn: XFAIL section but test passes)
+=====================================================================
+
+You may have found a problem in PHP.
+This report can be automatically sent to the PHP QA team at
+http://qa.php.net/reports and http://news.php.net/php.qa.reports
+This gives us a better understanding of PHP's behavior.
+If you don't want to send the report immediately you can choose
+option "s" to save it.	You can then email it to qa-reports@lists.php.net later.
+Do you want to send this report now? [Yns]: s
+Please send /usr/local/src/php-5.5.21/php_test_results_20150127_1605.txt to qa-reports@lists.php.net manually, thank you.
+root@cubie:/usr/local/src/php-5.5.21# 
+
+沒過也沒辦法，代碼不是我寫的，期待下一個版本這些bug會修正
+最後是安裝
 # make install
 
 執行make install安裝時終端機的輸出
-Installing shared extensions:     /usr/local/php-5.5.19/lib/php/extensions/no-debug-non-zts-20121212/
-Installing PHP CLI binary:        /usr/local/php-5.5.19/bin/
-Installing PHP CLI man page:      /usr/local/php-5.5.19/php/man/man1/
-Installing PHP FPM binary:        /usr/local/php-5.5.19/sbin/
-Installing PHP FPM config:        /usr/local/php-5.5.19/etc/
-Installing PHP FPM man page:      /usr/local/php-5.5.19/php/man/man8/
-Installing PHP FPM status page:      /usr/local/php-5.5.19/php/fpm/
-Installing PHP CGI binary:        /usr/local/php-5.5.19/bin/
-Installing PHP CGI man page:      /usr/local/php-5.5.19/php/man/man1/
-Installing build environment:     /usr/local/php-5.5.19/lib/php/build/
-Installing header files:          /usr/local/php-5.5.19/include/php/
-Installing helper programs:       /usr/local/php-5.5.19/bin/
+Installing shared extensions:     /usr/local/php-5.5.21/lib/php/extensions/no-debug-non-zts-20121212/
+Installing PHP CLI binary:        /usr/local/php-5.5.21/bin/
+Installing PHP CLI man page:      /usr/local/php-5.5.21/php/man/man1/
+Installing PHP FPM binary:        /usr/local/php-5.5.21/sbin/
+Installing PHP FPM config:        /usr/local/php-5.5.21/etc/
+Installing PHP FPM man page:      /usr/local/php-5.5.21/php/man/man8/
+Installing PHP FPM status page:      /usr/local/php-5.5.21/php/php/fpm/
+Installing PHP CGI binary:        /usr/local/php-5.5.21/bin/
+Installing PHP CGI man page:      /usr/local/php-5.5.21/php/man/man1/
+Installing build environment:     /usr/local/php-5.5.21/lib/php/build/
+Installing header files:          /usr/local/php-5.5.21/include/php/
+Installing helper programs:       /usr/local/php-5.5.21/bin/
   program: phpize
   program: php-config
-Installing man pages:             /usr/local/php-5.5.19/php/man/man1/
+Installing man pages:             /usr/local/php-5.5.21/php/man/man1/
   page: phpize.1
   page: php-config.1
-Installing PEAR environment:      /usr/local/php-5.5.19/lib/php/
+Installing PEAR environment:      /usr/local/php-5.5.21/lib/php/
 [PEAR] Archive_Tar    - installed: 1.3.12
 [PEAR] Console_Getopt - installed: 1.3.1
 [PEAR] Structures_Graph- installed: 1.0.4
 [PEAR] XML_Util       - installed: 1.2.3
 [PEAR] PEAR           - installed: 1.9.5
-Wrote PEAR system config file at: /usr/local/php-5.5.19/etc/pear.conf
-You may want to add: /usr/local/php-5.5.19/lib/php to your php.ini include_path
-/usr/local/src/php-5.5.19/build/shtool install -c ext/phar/phar.phar /usr/local/php-5.5.19/bin
-ln -s -f /usr/local/php-5.5.19/bin/phar.phar /usr/local/php-5.5.19/bin/phar
-Installing PDO headers:          /usr/local/php-5.5.19/include/php/ext/pdo/
+Wrote PEAR system config file at: /usr/local/php-5.5.21/etc/pear.conf
+You may want to add: /usr/local/php-5.5.21/lib/php to your php.ini include_path
+/usr/local/src/php-5.5.21/build/shtool install -c ext/phar/phar.phar /usr/local/php-5.5.21/bin
+ln -s -f /usr/local/php-5.5.21/bin/phar.phar /usr/local/php-5.5.21/bin/phar
+Installing PDO headers:          /usr/local/php-5.5.21/include/php/ext/pdo/
+root@cubie:/usr/local/src/php-5.5.21#
 
-回到/usr/local目錄，建立一個Symbolic Link指到php-5.5.19目錄
+回到/usr/local目錄，建立一個Symbolic Link指到php-5.5.21目錄
 # cd /usr/local
-# ln -s php-5.5.19 php
+# ln -s php-5.5.21 php
 
 複製這些檔案到它們該去的地方
-# cp /usr/local/src/php-5.5.19/php.ini-development /usr/local/php/lib/php.ini
+# cp /usr/local/src/php-5.5.21/php.ini-development /usr/local/php/lib/php.ini
 # cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
 # cp /usr/local/php/sbin/php-fpm /usr/local/sbin
 
@@ -449,6 +502,32 @@ cgi.fix_pathinfo=0
 ;default_charset = "UTF-8"
 改成這樣
 default_charset = "UTF-8"
+
+再設定Timezone
+date.timezone = Asia/Taipei
+
+時區的合法的值可以參考php官方網頁
+連結在這裡
+http://php.net/manual/en/timezones.php
+
+設定php服務器在地球上所在地的經緯度
+我先在Google地圖上輸入「三芝國中」
+然後在地點的紅色水球上面按下右鍵選「這是那裡」
+我得到座標
+25.259177, 121.501791
+(25°15'33.0"N 121°30'06.5"E)
+所以在php.ini裡要有這兩行設定
+date.default_latitude = 25.259177
+date.default_longitude = 121.501791
+
+再來是mysqli的相關設定
+mysqli.default_socket = /run/mysqld/mysqld.sock
+mysqli.default_host = localhost
+mysqli.default_user = mysql
+
+這是pdo_mysql的相關設定
+pdo_mysql.default_socket = /run/mysqld/mysqld.sock
+
 然後存檔離開vi文字編輯器
 
 接著修改php-fpm.conf
@@ -688,4 +767,45 @@ root@cubie:/usr/local/src/libmbfl#
 只有兩個頁面
 投降
 幹幹幹幹幹
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+我想在php的./configure指令裡，加上--with-curl
+所以我必須要先安裝上curl
+但是失敗了，暫時作罷
+以下是當時安裝的步驟及錯誤訊息
+
+curl也要安裝，去官網下載
+網址是
+http://curl.haxx.se/download.html
+安裝的官方參考網頁是
+http://curl.haxx.se/docs/install.html
+下載得到的
+curl-7.40.0.tar.gz
+放在/usr/local/src目錄下
+然後
+# cd /usr/local/src
+# tar zxvf ./curl-7.40.0.tar.gz
+# cd curl-7.40.0
+# ./configure --prefix=/usr/local/curl-7.40.0 --with-ssl=/usr/local/openssl-1.0.1j
+# make
+# make install
+
+哇靠
+/usr/bin/ld: /usr/local/openssl-1.0.1j/lib/libssl.a(s2_clnt.o): relocation R_ARM_THM_MOVW_ABS_NC against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+/usr/local/openssl-1.0.1j/lib/libssl.a: could not read symbols: Bad value
+collect2: ld returned 1 exit status
+make[2]: *** [libcurl.la] Error 1
+make[2]: Leaving directory `/usr/local/src/curl-7.40.0/lib'
+make[1]: *** [all] Error 2
+make[1]: Leaving directory `/usr/local/src/curl-7.40.0/lib'
+make: *** [all-recursive] Error 1
+
+以
+lib/libssl.a: could not read symbols: Bad value
+當作關鍵字Google搜尋之後
+發現這個網友和我遇到一樣的問題
+http://qing.blog.sina.com.cn/tj/44bf0603330023r5.html
+所以要重新編譯openssl
+我懶得試了
+先拔掉--with-curl先把php編出來再說
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊

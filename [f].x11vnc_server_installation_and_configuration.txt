@@ -187,3 +187,85 @@ $ ssh -p36000 -i ./cubie@cubian.private.key -L 5900:127.0.0.1:5900 cubie@192.168
 參考資料
 http://www.linuxhorizon.ro/ssh-tunnel.html
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+使用PuTTY軟件對cubian機器建立ssh tunnel
+
+參考資料
+http://blog.xuite.net/vexed/tech/14718287-%E7%94%A8+PuTTY+%E7%9A%84+SSH+Tunnel+%E4%B8%8A+BBS
+
+我們現在要進行的動作
+就是在筆記型電腦Linux的終端機下執行的這一行指令
+$ ssh -p36000 -i ./cubie@cubian.private.key -L 5900:127.0.0.1:5900 cubie@192.168.0.160 -N
+
+我們要達成同樣的效果，只是這一次不下指令
+而是用PuTTY軟件來完成
+首先要把
+/home/anntony/.ssh/cubian/cubie@cubian.private.key
+轉換成PuTTY軟件的格式
+在安裝PuTTY套件的時候，一併安裝了puttygen
+可以確認一下，指令是
+$ which puttygen
+有安裝的話
+終端機會回答
+/usr/bin/puttygen
+接著我再執行了
+$ man puttygen
+看一下這個工具的用法
+整篇廢言很多
+我看到這一句比較有用
+puttygen my-ssh.com-key -o mykey.ppk
+所以我依樣畫葫蘆
+我擔心這個指令會修改原來的私鑰，所以備份一支，用備份的來搞比較安全
+$ cp /home/anntony/.ssh/cubian/cubie@cubian.private.key /tmp
+$ cd /tmp
+$ puttygen /tmp/cubie@cubian.private.key -o /tmp/cubie@192.168.0.160.ppk
+$ cp /tmp/cubie@192.168.0.160.ppk /home/anntony/.ssh/cubian/
+這樣就產生了一支PuTTY軟件可以識別的ssh私鑰在
+/home/anntony/.ssh/cubian/cubie@192.168.0.160.ppk
+
+打開PuTTY軟件
+左邊選單預設在Session的位置，右邊的
+Host Name(or IP address)填入192.168.0.160
+Port填入36000
+左邊選單切換到Connection > Data
+在右邊的
+Auto-login username填入cubie
+左邊選單切換到SSH > Auth
+在右邊的
+Private Key file for authentication旁邊按下Browse按鈕
+選擇我們的連線私鑰/home/anntony/.ssh/cubian/cubie@192.168.0.160.ppk
+左邊選單切換到SSH > Tunnels
+在右邊的
+Add new forwarded port:
+Source port輸入5900
+Destination輸入127.0.0.1:5900
+下方維持Local和Auto被圈選的狀態不要動它
+按下右方的「Add」鈕
+再按下最下方的「Open」鈕
+此時會打開一個已經連線到Cubian機器的Login shell
+接著在筆記型電腦的終端機上，執行
+$ netstat -anp|grep 5900
+然後可以看到
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp        0      0 127.0.0.1:5900          0.0.0.0:*               LISTEN      4011/putty      
+tcp6       0      0 ::1:5900                :::*                    LISTEN      4011/putty      
+就表示ssh tunnel建立成功
+Cubian機器上的本機地址127.0.0.1的5900端口，已經被綁定到筆記型電腦本機的5900端口
+也就是說，在筆記型電腦上，可以使用Vinagre Vnc viewer連自已的127.0.0.1:5900，來遠端操作Cubian機器了
+最後不要忘了
+把剛才在PuTTY裡的設定值，在左邊選單選
+Session
+回到最初的畫面
+在右邊的
+Save Sessions的下面
+隨便輸入一個名字當作這次設定值的名字
+例
+ssh_tunnel_to_192.168.0.160
+並按下右邊的Save鈕
+下次可以直接把這組設定值直接叫出來直接按「Open」連線就行了
+還沒搞清楚PuTTY有沒有那種只建立ssh tunnel然後不要給出Login shell的方式
+不過這是小問題，即使建立ssh tunnel之後，PuTTY軟件給出Login shell也沒關係
+就放著也不會怎樣，只是覺得比較礙眼而已，不影響ssh tunnel的功能
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
