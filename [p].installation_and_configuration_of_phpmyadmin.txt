@@ -3,7 +3,7 @@
 工作列表
 1.下載phpmyadmin並解開到適當目錄
 2.自簽一張免錢的SSL certificate待用
-3.設定nginx服務器
+3.設定nginx服務器傾聽443端口
 4.設定客戶端機器的/etc/hosts
 5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
 6.使用文字編輯器設定config.inc.php
@@ -123,13 +123,15 @@ drwxrwxr-x 13 root www-data 4096  1月 29 01:34 ..
 修改我的/usr/local/nginx/conf/nginx.conf
 在最後面加入這個區塊
 
-# testing virtual host - www.phpmyadmin.com.tw
+# testing virtual host - www.kashu.com
     server {
-      server_name www.phpmyadmin.com.tw;
-      listen 80;
+      server_name www.kashu.com;
+      listen 443 ssl;
+      ssl_certificate /usr/local/nginx/ssl/www.kashu.com.crt;
+      ssl_certificate_key /usr/local/nginx/ssl/www.kashu.com.key;
       root /usr/local/nginx/phpmyadmin;
-      access_log  logs/phpmyadmin.access.log combined;
-      error_log   logs/phpmyadmin.error.log;
+      access_log  logs/www.kashu.com.access.log combined;
+      error_log   logs/www.kashu.com.error.log;
 
       location / {
          index index.php index.html index.htm;
@@ -159,6 +161,45 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 執行
 # service nginx restart
 
+稍早前我在Cubian機器上加了iptables防火牆規則
+在本機防火牆的INPUT鏈只開放80和36000端口
+現在要開放443端口，不然沒辦法讓筆記型電腦連https
+修改/root/firewall.sh
+# vi /root/firewall.sh
+
+這裡放上我改過的完整的/root/firewall.sh
+如下
+#!/bin/bash
+# ============ Set your network parameters here ===================================================
+iptables=/sbin/iptables
+loopback=127.0.0.1
+local=192.168.0.160
+lan=192.168.0.0/24
+# =================================================================================================
+$iptables -t filter -F
+$iptables -t filter -A INPUT -i lo -s $loopback -d $loopback -p all -j ACCEPT
+$iptables -t filter -A INPUT -i eth0 -s $local -d $local -p all -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 36000 --syn -m state --state NEW -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -m limit --limit 10/s --limit-burst 40 -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 80 --syn -m state --state NEW -j DROP
+$iptables -t filter -A INPUT -d $local -p tcp --dport 443 --syn -m state --state NEW -m limit --limit 10/s --limit-burst 40 -j ACCEPT
+$iptables -t filter -A INPUT -d $local -p tcp --dport 443 --syn -m state --state NEW -j DROP
+$iptables -t filter -A INPUT -p icmp --icmp-type 8 -m recent --name icmp_db --update --second 60 --hitcount 6 -j DROP
+$iptables -t filter -A INPUT -p icmp --icmp-type 8 -m recent --set --name icmp_db
+$iptables -t filter -A INPUT -s $lan -d $local -p icmp -j ACCEPT
+$iptables -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$iptables -t filter -P INPUT DROP
+$iptables -t filter -L -n --line-number
+# =================================================================================================
+
+再重新執行一次/root/firewall.sh
+讓新的設定值生效
+# /root/firewall.sh
+
+這樣就可以了
+現在nginx服務器可以服務下列URL的要求
+https://www.kashu.com
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 4.設定客戶端機器的/etc/hosts
 
@@ -170,7 +211,7 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 127.0.1.1       anntony-Lenovo-B590
 192.168.0.166   banana banana2.com
 192.168.0.162   cubie tonycha.com
-192.168.0.160   www.cubian.ann01.big www.phpmyadmin.com.tw
+192.168.0.160   www.cubian.ann01.big www.kashu.com
 
 # The following lines are desirable for IPv6 capable hosts
 ::1     ip6-localhost ip6-loopback
@@ -181,16 +222,18 @@ ff02::2 ip6-allrouters
 
 重點是192.168.0.160的那一行
 如果我在筆記型電腦上要
-# ping www.phpmyadmin.com.tw
+# ping www.kashu.com
 PING www.cubian.ann01.big (192.168.0.160) 56(84) bytes of data.
-64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=1 ttl=64 time=1.38 ms
-64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=2 ttl=64 time=1.15 ms
+64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=1 ttl=64 time=1.29 ms
+64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=2 ttl=64 time=1.23 ms
+64 bytes from www.cubian.ann01.big (192.168.0.160): icmp_seq=3 ttl=64 time=1.23 ms
 ^C
 --- www.cubian.ann01.big ping statistics ---
-2 packets transmitted, 2 received, 0% packet loss, time 1001ms
-rtt min/avg/max/mdev = 1.153/1.268/1.383/0.115 ms
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 1.233/1.255/1.294/0.039 ms
 
-對，我的筆記型電腦現在就把www.phpmyadmin.com.tw這個域名對應成192.168.0.160
+對，我的筆記型電腦現在就把www.kashu.com這個域名對應成192.168.0.160
+（而192.168.0.160同時又是www.cubian.ann01.big這個域名）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
@@ -199,14 +242,33 @@ rtt min/avg/max/mdev = 1.153/1.268/1.383/0.115 ms
 筆記型電腦：192.168.0.12
 Cubian機器（安裝了nginx與mariadb）：192.168.0.160
 mariadb運行於Cubian機器的127.0.0.1的3306端口
-nginx服務器運行於Cubian機器的80端口，Listen on 0.0.0.0:80
+nginx服務器運行於Cubian機器的80端口和443端口
+
+# netstat -anp|grep nginx
+tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN      1434/nginx.conf 
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      1434/nginx.conf 
+unix  3      [ ]         STREAM     CONNECTED     12477    1434/nginx.conf     
+unix  3      [ ]         STREAM     CONNECTED     12480    1434/nginx.conf     
+unix  3      [ ]         STREAM     CONNECTED     12478    1434/nginx.conf     
+unix  3      [ ]         STREAM     CONNECTED     12479    1434/nginx.conf 
 
 在我的筆記型電腦打開Chrome瀏覽器
 連接網址
-http://www.phpmyadmin.com.tw/setup
+https://www.kashu.com/setup
 
-
-
+然後會看到Chrome瀏覽器親切的提醒
+「您的連線不是私人連線」
+「攻擊者可能會嘗試從www.kashu.com竊取您的資訊 (例如密碼、郵件或信用卡資訊)」
+還有網址列那可怕的紅色叉叉
+這是因為我使用了自簽的免錢的SSL證書
+不要理會這個訊息
+按下「進階」「繼續前往 www.kashu.com 網站(不安全)」
+然後就可以看到
+phpMyAdmin setup的首頁了
+走到這裡
+花了很大力氣
+呼
+明日待續
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 7.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？

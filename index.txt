@@ -28,4 +28,6 @@ m.我的第一個Laravel 4 application
 
 n.安裝MariaDB
 
-o.MariaDB服務器管理基礎 （編輯中…尚未完成）
+o.MariaDB服務器管理基礎 （編輯中…尚未完成...）
+
+p.安裝與設定phpmyadmin (編輯中...尚未完成...)
