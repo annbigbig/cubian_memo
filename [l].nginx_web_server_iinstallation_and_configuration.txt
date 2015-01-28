@@ -490,6 +490,9 @@ root@cubie:/usr/local/src/php-5.5.21#
 # cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
 # cp /usr/local/php/sbin/php-fpm /usr/local/sbin
 
+修改php-fpm執行檔的權限
+# chown root:root /usr/local/sbin/php-fpm
+
 修改php.ini
 # vi /usr/local/php/lib/php.ini
 
@@ -552,24 +555,24 @@ group = www-data
 # ps aux |grep php-fpm
 
 終端機打印了
-root     16161  0.0  0.1  15892  2480 ?        Ss   16:01   0:00 php-fpm: master process (/usr/local/php-5.5.19/etc/php-fpm.conf)
-www-data 16170  0.0  0.1  15892  2104 ?        S    16:01   0:00 php-fpm: pool www
-www-data 16171  0.0  0.1  15892  2104 ?        S    16:01   0:00 php-fpm: pool www
-root     17910  0.0  0.0   4032   772 pts/0    S+   16:01   0:00 grep php-fpm
+root      4082  0.1  0.1  20540  3212 ?        Ss   18:34   0:00 php-fpm: master process (/usr/local/php-5.5.21/etc/php-fpm.conf)
+www-data  4096  0.0  0.1  20540  2792 ?        S    18:34   0:00 php-fpm: pool www
+www-data  4098  0.0  0.1  20540  2792 ?        S    18:34   0:00 php-fpm: pool www
+root      9060  0.0  0.0   4032   768 pts/0    S+   18:34   0:00 grep php-fpm
 
 這樣就確認php-fpm真的啟動了，然後先結束掉php-fpm程序
-殺掉master process，後面的16170和16171都會自動關閉掉
-# kill 16161
+殺掉master process 4082，後面的4096和4098都會自動關閉掉
+# kill 4082
 
 再看一下有沒有清除乾淨？
 # ps aux |grep php-fpm
 
 終端機打印了
-root     31606  0.0  0.0   4028   764 pts/0    S+   16:28   0:00 grep php-fpm
+root      1238  0.0  0.0   4028   760 pts/0    S+   18:36   0:00 grep php-fpm
 
 很好，這樣就恢復到沒有執行php-fpm之前的狀態
 現在要給php-fpm作一個init script
-# cp /usr/local/src/php-5.5.19/sapi/fpm/init.d.php-fpm.in /etc/init.d/php-fpm
+# cp /usr/local/src/php-5.5.21/sapi/fpm/init.d.php-fpm.in /etc/init.d/php-fpm
 # chmod 755 /etc/init.d/php-fpm
 
 再次修改php-fpm.conf
@@ -578,7 +581,7 @@ root     31606  0.0  0.0   4028   764 pts/0    S+   16:28   0:00 grep php-fpm
 把預設的關於pid的這一行
 [global]
 ; Pid file
-; Note: the default prefix is /usr/local/php-5.5.19/var
+; Note: the default prefix is /usr/local/php-5.5.21/var
 ; Default Value: none
 ;pid = run/php-fpm.pid
 

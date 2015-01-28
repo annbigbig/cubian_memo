@@ -51,47 +51,68 @@ http://laravel.com/docs/4.2/installation
 # php --version
 
 終端機打印了
-PHP 5.5.19 (cli) (built: Nov 23 2014 14:50:42) 
+PHP 5.5.21 (cli) (built: Jan 27 2015 23:24:35) 
 Copyright (c) 1997-2014 The PHP Group
 Zend Engine v2.5.0, Copyright (c) 1998-2014 Zend Technologies
 
-看到上面寫的5.5.19，這是稍早前我安裝的版本沒錯
+看到上面寫的5.5.21，這是稍早前我安裝的版本沒錯
 還有我想看我的php有支援什麼模組，執行
 # php -m
 
 終端機打印了
 [PHP Modules]
+bcmath
+bz2
+calendar
 Core
 ctype
 date
 dom
 ereg
+exif
 fileinfo
 filter
+gd
+gettext
+gmp
 hash
 iconv
 json
 libxml
+mbstring
 mcrypt
+mhash
 mysql
+mysqli
 mysqlnd
 openssl
 pcre
 PDO
+pdo_mysql
 pdo_sqlite
 Phar
 posix
+readline
 Reflection
 session
+shmop
 SimpleXML
+soap
+sockets
 SPL
 sqlite3
 standard
+sysvmsg
+sysvsem
+sysvshm
 tokenizer
+wddx
 xml
 xmlreader
+xmlrpc
 xmlwriter
 zip
+zlib
 
 [Zend Modules]
 
@@ -112,7 +133,7 @@ Use it: php composer.phar
 # ls -al | grep composer
 
 終端機打印了
--rwxr-xr-x  1 root  root  1029532 11月 25 11:41 composer.phar
+-rwxr-xr-x  1 root     root     1051245  1月 28 19:01 composer.phar
 
 哦耶帥啦，這就是我TM朝思暮想的composer
 順便一提，稍早之前我在安裝php的時候
@@ -141,7 +162,7 @@ Changed current directory to /root/.composer
 ./composer.json has been created
 Loading composer repositories with package information
 Updating dependencies (including require-dev)
-  - Installing symfony/console (v2.5.7)
+  - Installing symfony/console (v2.6.3)
     Downloading: 100%         
 
   - Installing guzzlehttp/streams (2.1.0)
@@ -154,6 +175,7 @@ Updating dependencies (including require-dev)
     Downloading: 100%         
 
 symfony/console suggests installing symfony/event-dispatcher ()
+symfony/console suggests installing symfony/process ()
 symfony/console suggests installing psr/log (For using the console logger)
 guzzlehttp/guzzle suggests installing ext-curl (Guzzle will use specific adapters if cURL is present)
 Writing lock file
@@ -161,16 +183,18 @@ Generating autoload files
 
 結果我再
 root@cubie:/tmp# ls -al
-總計 16
-drwxrwxrwt  6 root  root   160 11月 25 23:02 .
-drwxr-xr-x 24 root  root  4096 11月 25 22:34 ..
-drwx------  2 cubie cubie   60 11月 25 22:57 gcin-cubie
-drwxrwxrwt  2 root  root    60 11月 25 22:57 .ICE-unix
-drwx------  2 cubie cubie   60 11月 25 22:57 ssh-bMbzSGcdmtVg
--r--r--r--  1 root  root    11 11月 25 22:57 .X0-lock
-drwxrwxrwt  2 root  root    60 11月 25 22:57 .X11-unix
--rw-r--r--  1 root  root  4800 11月 25 22:57 x11vnc.log
-root@cubie:/tmp#
+總計 56
+drwxrwxrwt  6 root     root       200  1月 28 19:03 .
+drwxr-xr-x 24 root     root      4096  1月 28 01:18 ..
+drwx------  2 cubie    cubie       60  1月 28 16:35 gcin-cubie
+drwxrwxrwt  2 root     root        60  1月 28 16:35 .ICE-unix
+-rwxr-xr-x  1 root     root      2360 11月 23 16:47 php-fpm
+-rw-------  1 www-data www-data 34142  1月 28 18:56 sess_nt2linuana5u1mv5psjcrk53q6n6hs9a
+drwx------  2 cubie    cubie       60  1月 28 16:35 ssh-YByckDyQAoIS
+-r--r--r--  1 root     root        11  1月 28 16:35 .X0-lock
+drwxrwxrwt  2 root     root        60  1月 28 16:35 .X11-unix
+-rw-r--r--  1 root     root      4776  1月 28 16:35 x11vnc.log
+root@cubie:/tmp# 
 
 剛才的composer指令並沒有在/tmp目錄裡安裝什麼東西
 但是它有安裝東西在/root/.composer目錄

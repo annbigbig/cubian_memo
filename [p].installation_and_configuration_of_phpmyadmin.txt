@@ -2,10 +2,12 @@
 
 工作列表
 1.下載phpmyadmin並解開到適當目錄
-2.設定nginx服務器
-3.設定客戶端機器的/etc/hosts
-4.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
-5.使用文字編輯器設定config.inc.php
+2.自簽一張免錢的SSL certificate待用
+3.設定nginx服務器
+4.設定客戶端機器的/etc/hosts
+5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
+6.使用文字編輯器設定config.inc.php
+7.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
 
 細節
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
@@ -37,7 +39,86 @@ phpMyAdmin-4.3.8-all-languages.zip
 # ln -s /usr/local/nginx/phpmyadmin-4.3.8 /usr/local/nginx/phpmyadmin
  
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-2.設定nginx服務器
+2.自簽一張免錢的SSL certificate待用
+
+通常來說
+SSL certificate應該要老老實實花錢買的
+向godaddy.com買
+或是淘寶上面也有賣一些很便宜的
+SSL證書從便宜到貴有分成三個等級
+DV、OV、EV
+分別是
+Domain Validation
+Organization Validation
+Extended Validation
+的縮寫
+如果是金融類或是電子商務之類的
+需要用到很貴很高級的EV等級的SSL證書
+那可以使瀏覽器的地址欄變成綠色的
+然後顧客連到這個網站之後就會覺得這個網站起來很值得信任的感覺 (大概吧)
+便宜一點的就OV等級
+最便宜是DV等級
+除了這三個等級之外
+似乎也有免費的SSL證書
+使用
+「SSL 證書 等級 價錢」
+當作關鍵字搜尋Google
+可以找到很多資料
+像是我的偶像保哥寫的
+http://blog.miniasp.com/post/2010/03/02/The-Complete-Guide-for-Purchase-Install-SSL-Certificate-to-IIS7.aspx
+內地的網友
+http://qiaodahai.com/cheapest-ssl-certificates.html
+稍微看一下之後，對SSL證書會有一個粗略的認識
+在這裡我要自簽一張免錢的SSL證書給我的nginx服務器
+瀏覽器連https的時候，網址列會跳出很可怕的紅色叉叉
+不過沒差啦
+這是測試用的nginx服務器
+而且我連的是內網reverse IP的
+https://192.168.0.160
+是在怕什麼啦紅叉就紅叉
+廢言說完了
+來產生自簽的SSL certificate吧
+執行
+# cd /usr/local/nginx
+# mkdir ssl
+# chown root:www-data /usr/local/nginx/ssl
+# cd ssl
+# openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./www.kashu.com.key -out ./www.kashu.com.crt
+
+接著回答一些問題
+Generating a 2048 bit RSA private key
+...................................................+++
+............................................................................+++
+writing new private key to './www.kashu.com.key'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:TW
+State or Province Name (full name) [Some-State]:Taipei
+Locality Name (eg, city) []:SanZi
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:KunAn Hsu,Inc.
+Organizational Unit Name (eg, section) []:Development Department
+Common Name (e.g. server FQDN or YOUR name) []:www.kashu.com
+Email Address []:annbigbig@gmail.com
+root@cubie:/usr/local/nginx/ssl#
+
+看一下是不是真的產生了key和crt檔案？
+# ls -al
+
+終端機打印了
+總計 16
+drwxr-xr-x  2 root www-data 4096  1月 29 01:38 .
+drwxrwxr-x 13 root www-data 4096  1月 29 01:34 ..
+-rw-r--r--  1 root root     1489  1月 29 01:38 www.kashu.com.crt
+-rw-r--r--  1 root root     1708  1月 29 01:38 www.kashu.com.key
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+3.設定nginx服務器
 
 修改我的/usr/local/nginx/conf/nginx.conf
 在最後面加入這個區塊
@@ -79,7 +160,7 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 # service nginx restart
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-3.設定客戶端機器的/etc/hosts
+4.設定客戶端機器的/etc/hosts
 
 客戶端機器就是筆記型電腦
 修改它的/etc/hosts
@@ -112,7 +193,7 @@ rtt min/avg/max/mdev = 1.153/1.268/1.383/0.115 ms
 對，我的筆記型電腦現在就把www.phpmyadmin.com.tw這個域名對應成192.168.0.160
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-4.第一次連入phpmyadmin設定網頁介面
+5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
 
 網路環境概述
 筆記型電腦：192.168.0.12
@@ -122,12 +203,93 @@ nginx服務器運行於Cubian機器的80端口，Listen on 0.0.0.0:80
 
 在我的筆記型電腦打開Chrome瀏覽器
 連接網址
-http://www.phpmyadmin.com.tw/phpmyadmin/setup
+http://www.phpmyadmin.com.tw/setup
 
 
 
 
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+7.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
 
+godaddy官網的說明頁面
+https://support.godaddy.com/help/article/3601/generating-nginx-csrs-certificate-signing-requests
+
+另外在
+nginx HTTP Server 2nd Edition
+這本書的第153和第154頁裡面
+有介紹如何向godaddy.com購買證書
+一直到把nginx服務器設定好https服務的完整步驟
+有興趣可以翻閱一下
+過程大概是
+執行這個指令，它會產生一個rsa key和一個csr檔案
+$ openssl req -new -newkey rsa:2048 -nodes -keyout www.kashu.com.tw.key -out www.kashu.com.tw.csr
+
+產生csr必須回答下列的問題
+Generating a 2048 bit RSA private key
+..........+++
+....................+++
+writing new private key to 'www.kashu.com.tw.key'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:TW
+State or Province Name (full name) [Some-State]:Taipei
+Locality Name (eg, city) []:SanZi
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:KunAn Hsu,Inc.
+Organizational Unit Name (eg, section) []:Development Department
+Common Name (e.g. server FQDN or YOUR name) []:www.kashu.com.tw
+Email Address []:annbigbig@gmail.com
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+
+三、把剛才產生的csr檔案提交給godaddy
+我沒真的幹過這件事
+(買證書要錢的，我窮B謝謝，有機會有閒錢我會試的)
+不過看godaddy的官網說明頁面
+似乎是先註冊一個godaddy的帳號
+然後登入之後，godaddy的SSL證書的申請網頁裡有一個文字框
+它會要求你把剛才產生的csr檔的所有內容貼到那個文字框裡面，然後按提交鈕，就完成提交csr檔案的動作
+
+四、接下來等godaddy回覆
+等godaddy回覆時，可以得到兩個檔案
+一個是
+www.kashu.com.tw.crt
+另一個是
+gd_bundle.crt
+為什麼有兩個檔案？
+一張是我的SSL證書（www.kashu.com.tw.crt）
+另一張是CA也就是證書頒發機構的SSL證書（gd_bundle.crt）
+
+五、把兩張證書合併成一張
+執行指令
+# cat www.kashu.com.tw.crt gd_bundle.crt > combined.crt
+
+六、最後就是設定nginx服務器使用https作為網頁服務
+
+修改/usr/local/nginx/conf/nginx.conf
+重點是
+server {
+        listen       443 ssl;
+        server_name  www.kashu.com.tw;
+        ssl_certificate /full/path/to/combined.crt;
+        ssl_certificate_key /full/path/to/www.kashu.com.tw.key;
+
+     (其他設定…)
+}
+
+理論上是這樣
+實際上要花點錢和godaddy真的買一張SSL證書來驗證書上和godaddy官網的說法
+不過
+我沒錢
+BBBBBBBBBBBBBBB
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 關於php.ini
