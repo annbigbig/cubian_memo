@@ -241,7 +241,13 @@ Source port輸入5900
 Destination輸入127.0.0.1:5900
 下方維持Local和Auto被圈選的狀態不要動它
 按下右方的「Add」鈕
-再按下最下方的「Open」鈕
+如果需要筆記型電腦的3306端口，與Cubian機器的127.0.0.1:3306對接
+可以再重複上面的動作
+Source port輸入3306
+Destination輸入127.0.0.1:3306
+再按下一次右下的「Add」鈕
+
+設定完成後，按下最下方的「Open」鈕
 此時會打開一個已經連線到Cubian機器的Login shell
 接著在筆記型電腦的終端機上，執行
 $ netstat -anp|grep 5900

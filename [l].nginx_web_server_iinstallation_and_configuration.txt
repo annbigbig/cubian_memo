@@ -732,7 +732,8 @@ nginx: configuration file /usr/local/nginx-1.6.2/conf/nginx.conf test is success
 
 
 
-
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 附錄之：整個地球只有我遇到這個問題嗎？幹
 因為我要把mbstring的功能編譯進php裡
@@ -766,7 +767,17 @@ root@cubie:/usr/local/src/libmbfl#
 上網用Google搜尋gawk: mk_eaw_tbl.awk:13: fatal: cannot open file `EastAsianWidth.txt' 
 只有兩個頁面
 投降
-幹幹幹幹幹
+
+其實不用特別去編譯libmbfl
+在
+./configure --enable-mbstring
+就可以了
+不用特別為了要加上--enable-mbstring
+然後去拉libmbfl
+沒編出libmbfl也不會影響我./configure --enable-mbstring
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 我想在php的./configure指令裡，加上--with-curl
 所以我必須要先安裝上curl
@@ -807,5 +818,123 @@ http://qing.blog.sina.com.cn/tj/44bf0603330023r5.html
 所以要重新編譯openssl
 我懶得試了
 先拔掉--with-curl先把php編出來再說
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+甘寧老木又遇到鬼：重新編譯並安裝完php-5.5.21之後，mariadb就死了
+
+在安裝php-5.5.21
+在執行完
+# make install
+之後
+已經是凌晨三點半
+我就停止動作了
+隔天起床
+發現mariadb死掉了
+我執行
+# netstat -anp|grep 3306
+這行指令之後
+發現什麼東西都沒有
+於是我又
+# service mysql status
+終端機告訴我
+[FAIL] MySQL is not running ... failed!
+
+於是我當然是想啟動它
+root@cubie:/usr/bin# service mysql start
+Starting MySQL
+[FAIL] Couldn't find MySQL server (/usr/bin/mysqld_safe) ... failed!
+
+我覺得莫名奇妙
+為什麼會去啟動/usr/bin/mysqld_safe
+我編譯安裝的mariadb
+應該要啟動
+/usr/local/mariadb-10.0.14/bin/mysqld_safe
+這個才對
+寫在
+/etc/init.d/mysql
+裡面
+
+然後我幹了一件蠢事
+就
+# ln -s /usr/local/mariadb/bin/mysqld_safe /usr/bin/mysqld_safe
+因為我單純的想著
+你要/usr/bin/mysqld_safe我TM就賞你一個
+完全沒想到為什麼和平常的行為不一樣
+接著
+再試著啟動了一次mariadb
+# service mysql start
+然後我還是不能啟動它
+得到
+Starting MySQL
+[FA failed!
+接著我想看看log檔裡面有沒有什麼有用的訊息
+於是我
+# vi /srv/mysql/error.log
+我看到了
+150128 17:35:36 mysqld_safe Starting mysqld daemon with databases from /var/lib/mysql
+150128 17:35:36 [ERROR] Can't find messagefile '/usr/share/mysql/errmsg.sys'
+150128 17:35:36 [ERROR] Aborting
+
+150128 17:35:36 [Note]
+150128 17:35:36 mysqld_safe mysqld from pid file /var/run/mysqld/mysqld.pid ended
+整個mariadb的行為怪到爆
+怎麼會去想要用/var/lib/mysql這個路徑當成系統資料庫來啟動mysqld呢？
+而且socket檔的位置也和我編譯時指定的不一樣
+居然是
+/var/run/mysqld/mysqld.pid
+我記得我編譯mariadb時指定的socket明明就是在
+/run/mysqld/mysqld.sock
+怪
+真TM怪異
+和平常的mariadb整個都不一樣
+於是我在系統裡東找西找
+我發現了
+兩個完全沒看過的檔案
+在
+/usr/bin/mysql_config
+和主要的兇手
+/etc/mysql/my.cnf
+它馬的它蓋掉了我的/etc/my.cnf的設定
+所以整個mariadb的行為都不一樣了
+所以我直接送它們上了西天
+# rm -rf /etc/mysql/my.cnf
+# rm -rf /usr/bin/mysql_config
+順道帶上我剛才自已弄的symlink吧
+# rm -rf /usr/bin/mysqld_safe
+
+接著再重新啟動一次mariadb
+root@cubie:/usr/local# service mysql start
+Starting MySQL
+[ o. 
+root@cubie:/usr/local# service mysql status
+[ ok ] MySQL running (32517).
+
+接著我查看了一下/srv/mysql/error.log
+150128 17:47:59 mysqld_safe Starting mysqld daemon with databases from /srv/mysql
+150128 17:47:59 [Note] InnoDB: Using mutexes to ref count buffer pool pages
+150128 17:47:59 [Note] InnoDB: The InnoDB memory heap is disabled
+150128 17:47:59 [Note] InnoDB: Mutexes and rw_locks use GCC atomic builtins
+150128 17:47:59 [Note] InnoDB: GCC builtin __sync_synchronize() is used for memory barrier
+150128 17:47:59 [Note] InnoDB: Compressed tables use zlib 1.2.7
+150128 17:47:59 [Note] InnoDB: Not using CPU crc32 instructions
+150128 17:47:59 [Note] InnoDB: Initializing buffer pool, size = 128.0M
+150128 17:47:59 [Note] InnoDB: Completed initialization of buffer pool
+150128 17:47:59 [Note] InnoDB: Highest supported file format is Barracuda.
+150128 17:47:59 [Note] InnoDB: 128 rollback segment(s) are active.
+150128 17:47:59 [Note] InnoDB: Waiting for purge to start
+150128 17:47:59 [Note] InnoDB:  Percona XtraDB (http://www.percona.com) 5.6.20-68.0 started; log sequence number 1944869
+150128 17:48:00 [Note] Server socket created on IP: '127.0.0.1'.
+150128 17:48:00 [Warning] 'proxies_priv' entry '@% root@cubie' ignored in --skip-name-resolve mode.
+150128 17:48:00 [Note] Event Scheduler: Loaded 0 events
+150128 17:48:00 [Note] /usr/local/mariadb-10.0.14/sbin/mysqld: ready for connections.
+Version: '10.0.14-MariaDB-log'  socket: '/run/mysqld/mysqld.sock'  port: 3306  Source distribution
+
+一切恢復正常
+大概是在編譯php的時候
+apt-get安裝了什麼依賴套件
+偷偷把那兩個廢檔也一併安裝到了系統裡
+搞死我了MLGB
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
