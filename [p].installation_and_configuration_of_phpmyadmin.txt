@@ -222,10 +222,178 @@ https://127.0.0.1/
 稍後會補上在PuTTY裡面要怎麼弄
 應該是把
 /usr/bin/putty
-這個執行檔的owner權限加上s
-讓它可以用root用戶身分執行
+這個執行檔加上SUID權限
+讓它可以用root用戶身分執行 
+(執行/usr/bin/putty的人是登入系統的anntony，可是有了SUID卻會被當作是用root用戶的身分來執行的)
 因為只有變成root用戶，才可以將遠方主機的端口綁到本地機的privileged port (小於1024的端口)
 稍後回來我會實驗它
+
+首先實驗
+使用筆記型電腦上的用戶anntony身分
+開啟PuTTY軟件
+有沒有辦法將Cubian機器的127.0.0.1:443綁到筆記型電腦上的127.0.0.1:443
+調出稍早前儲存的「ssh_tunnel_to_192.168.0.160」那組設定
+在PuTTY軟件首頁選這組設定，然後按下右方中間的「Load」鈕
+請參考
+https://github.com/annbigbig/cubian_memo/blob/master/%5Bf%5D.x11vnc_server_installation_and_configuration.txt
+
+在PuTTY軟件左側選單的
+Connection > SSH > Tunnels
+右方面板的
+Add new Forwarded port:
+的下方
+Source port輸入443
+Destination輸入127.0.0.1:443 (這是遠端的Cubian機器)
+然後按下「Add」鈕
+把這個對應關系加到Forwarded ports:列表中
+然後回到首頁把這個設定變更給存檔
+最後按下「Open」鈕，實際建立ssh tunnel
+接著我打開筆記型電腦的終端機
+執行
+anntony-Lenovo-B590 ~ # netstat -anp|grep 127.0.0.1
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      2325/cupsd      
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      7016/putty      
+tcp        0      0 127.0.0.1:5900          0.0.0.0:*               LISTEN      7016/putty      
+udp        0      0 127.0.0.1:619           0.0.0.0:*                           867/rpc.statd   
+anntony-Lenovo-B590 ~ #
+結果如同之前說的
+遠端Cubian機器的443端口，並沒有被綁來筆記型電腦上
+這裡只有3306端口和5900端口被綁來
+所以現在我們要把PuTTY軟件的執行檔
+也就是
+/usr/bin/putty
+加上一個SUID permisstion
+之後不管是筆記型電腦上的那一個用戶執行PuTTY軟件
+都會被視同是用root用戶的身分執行的
+這樣就可以把遠端Cubian機器的127.0.0.1:443端口
+綁來自已的127.0.0.1:443端口
+因為443小於1024，是一個Priviledge Port，是一個特權端口只有root用戶能命令它被傾聽
+關於SUID的說明
+可以參考
+http://www.linuxnix.com/2011/12/suid-set-suid-linuxunix.html
+也有中文資料
+http://bunkera.pixnet.net/blog/post/24390497-sticky_bit%E3%80%81suid%E3%80%81sguid%E4%B9%8B%E8%AA%AA%E6%98%8E%E8%88%87%E4%BD%BF%E7%94%A8
+
+首先看一下筆記型電腦上的/usr/bin/putty原來的檔案擁有人、群組、和權限值是什麼？
+# ls -al /usr/bin/putty
+-rwxr-xr-x 1 root root 826304  4月  9  2014 /usr/bin/putty
+
+現在給它加入SUID
+# chmod u+s /usr/bin/putty
+
+看一下現在的權限變成怎樣？
+# ls -al /usr/bin/putty
+
+終端機回應了
+-rwsr-xr-x 1 root root 826304  4月  9  2014 /usr/bin/putty
+
+現在再重複一次上面的動作，在筆記型電腦上把PuTTY軟件打開
+然後再一次嘗試把遠端Cubian機器上面的127.0.0.1:443綁定到本地的127.0.0.1:443
+往上面稍微捲一下就可以看到怎麼作的
+所以我不再重複
+不過
+因為我照著一般的方式
+在Menu > 網際網路 > PuTTY SSH Client
+想要打開PuTTY軟件
+卻完全不能開啟了
+於是我
+在終端機試著以用戶anntony身分打開PuTTY軟件的時候
+得到了這個訊息
+anntony@anntony-Lenovo-B590 ~ $ putty
+
+(process:8755): Gtk-WARNING **: This process is currently running setuid or setgid.
+This is not a supported use of GTK+. You must create a helper
+program instead. For further details, see:
+
+    http://www.gtk.org/setuid.html
+
+Refusing to initialize GTK+.
+我TM真的快瘋了
+這也不行那也不行
+只好把/usr/bin/putty的SUID權限拔除，讓它回復原狀
+# chmod u-s /usr/bin/putty
+# ls -al /usr/bin/putty
+-rwxr-xr-x 1 root root 826304  4月  9  2014 /usr/bin/putty
+
+這樣一切又回到原點
+可是我又想
+我會不會想得太複雜了？
+乾脆就直接在筆記型電腦上sudo -i成為root用戶，然後在終端機下面把PuTTY打開
+這樣是不是就可以把遠端的Cubian機器的127.0.0.1:443給綁定在本地機的127.0.0.1:443了呢？
+試吧
+就執行
+# putty
+因為我拔掉SUID了，所以這一次順利打開了PuTTY軟件
+然後重複上面我建立ssh tunnel的步驟
+要注意的是原來在用戶anntony身分建立的那些PuTTY軟件的快速設定值都不見了
+因為那是用戶anntony的
+現在我是用戶root
+所以全部都要重新輸入
+首頁的
+Host Name (or IP address)輸入192.168.0.160
+Port輸入36000
+左邊選Connection > Data
+在右邊的
+Auto-login username輸入用戶名稱cubie
+左邊再選Connection > SSH > Auth
+在右邊的Private key file authentication旁邊按下「Browse」鈕
+選擇/root/cubie@192.168.0.160.ppk (我先將它從/home/anntony/.ssh/cubian/cubie@192.168.0.160.ppk複製過來了)
+左邊再選Connection > SSH > Tunnels
+在右邊的Add new forwarded port:的下方
+Source port輸入3306
+Destination輸入127.0.0.1:3306
+按下右邊的「Add」鈕
+Source port輸入5900
+Destination輸入127.0.0.1:5900
+按下右邊的「Add」鈕
+Source port輸入443
+Destination輸入127.0.0.1:443
+按下右邊的「Add」鈕
+完成這三組端口綁定之後
+回到首頁把這組設定值存成ssh_tunnel_to_192.168.0.160，然後按下「Save」鈕
+下次就直接選這組設定，然後按下「Load」鈕，就可以直接拉出來用
+現在設定都完成了，在按下「Open」鈕建立ssh tunnel之前
+先看看本地關於127.0.0.1上面傾聽的端口號
+anntony-Lenovo-B590 ~ # netstat -anp|grep 127.0.0.1
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      2325/cupsd      
+udp        0      0 127.0.0.1:619           0.0.0.0:*                           867/rpc.statd   
+anntony-Lenovo-B590 ~ # 
+現在按下PuTTY軟件的「Open」鈕，試著與Cubian機器建立ssh tunnel
+跳出了一大串
+The server's host key is not cached. You have no guarantee
+that the server is the computer you think it is.
+The server's rsa2 key fingerprint is:
+ssh-rsa 2048 fa:4b:f7:0b:ae:4c:4b:b1:40:4d:48:70:97:fc:b5:a2
+If you trust this host,press "Accept" to add the key to 
+PuTTY's cache and carry on connecting.
+If you want to carry on connecting just once, without adding
+the key to the cache,press "Connect Once".
+If you do not trust this host,press "Cancel" to abandon the
+connection
+
+          Accept          Connect Once          Cancel
+
+會跳出這個訊息是因為
+筆記型電腦第一次用root用戶的身分，使用PuTTY軟件對Cubian機器進行ssh連線
+選擇Accept
+建立連線後
+然後再次查看本地127.0.0.1上面傾聽的端口號
+# netstat -anp|grep 127.0.0.1
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      2325/cupsd      
+tcp        0      0 127.0.0.1:443           0.0.0.0:*               LISTEN      9316/putty      
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      9316/putty      
+tcp        0      0 127.0.0.1:5900          0.0.0.0:*               LISTEN      9316/putty      
+udp        0      0 127.0.0.1:619           0.0.0.0:*                           867/rpc.statd   
+anntony-Lenovo-B590 tmp # 
+
+哇靠，終於成功了
+累個半死
+接著可以在筆記型電腦上打開瀏覽器
+試連一下網址
+https://127.0.0.1/
+還有打開MySQL workbench試連一下127.0.0.1:3306
+還有打開Vinagre Vnc Viewer試連一下127.0.0.1:5900
+看是不是真的可以順利連上
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
