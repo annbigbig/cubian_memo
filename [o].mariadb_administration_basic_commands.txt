@@ -70,6 +70,10 @@ o.MariaDB服務器管理基礎
 
 （關於那些我沒寫進來的東西：）
 
+
+（遇到其他奇怪的問題：）
+   55.無法使用一般的用戶登入mariadb服務器
+
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.查看mysqld運行狀態
 
@@ -2907,5 +2911,258 @@ guide to backup technologies mariadb white paper
 祝您平安順心，那麼先這樣，小弟先繼續剩下的工作了
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+55.無法使用一般的用戶登入mariadb服務器
 
+在我的Cubian機器上
+我安裝好了phpmyadmin
+於是我試著用一般用戶登入
+首先建立了和Cubian機器的ssh tunnel連結
+把Cubian機器的127.0.0.1:443對應到本機的127.0.0.1:443
+打開筆記型電腦的瀏覽器
+連到
+https://localhost
+帳號是monti
+然後輸入密碼montipassword
+不過得到了
+錯誤
 
+SQL 查詢： 編輯 編輯
+SET CHARACTER SET 'utf8';
+MySQL 回應: 說明文件
+#1184 - Aborted connection 5 to db: 'unconnected' user: 'monti' host: 'localhost' (init_connect command failed) 
+
+這是使用phpmyadmin的網頁介面登入
+得到的莫名奇妙錯誤訊息
+我產生用戶monti還有給她的授權是這樣下指令的
+
+MariaDB [mysql]> CREATE USER 'monti'@'localhost' IDENTIFIED BY 'montipassword';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> CREATE USER 'monti'@'127.0.0.1' IDENTIFIED BY 'montipassword';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'monti'@'localhost';
++--------------------------------------------------------------------------------------------------------------+
+| Grants for monti@localhost                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'monti'@'localhost' IDENTIFIED BY PASSWORD '*48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C' |
++--------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'monti'@'127.0.0.1';
++--------------------------------------------------------------------------------------------------------------+
+| Grants for monti@127.0.0.1                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'monti'@'127.0.0.1' IDENTIFIED BY PASSWORD '*48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C' |
++--------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [mysql]> GRANT ALL ON testdb17.* TO 'monti'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+MariaDB [mysql]> GRANT ALL ON testdb17.* TO 'monti'@'127.0.0.1';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'monti'@'localhost';
++--------------------------------------------------------------------------------------------------------------+
+| Grants for monti@localhost                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'monti'@'localhost' IDENTIFIED BY PASSWORD '*48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C' |
+| GRANT ALL PRIVILEGES ON `testdb17`.* TO 'monti'@'localhost'                                                  |
++--------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.01 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'monti'@'127.0.0.1';
++--------------------------------------------------------------------------------------------------------------+
+| Grants for monti@127.0.0.1                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'monti'@'127.0.0.1' IDENTIFIED BY PASSWORD '*48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C' |
+| GRANT ALL PRIVILEGES ON `testdb17`.* TO 'monti'@'127.0.0.1'                                                  |
++--------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+這個很一般的用戶monti
+不像是稍早產生的超級使用者tony
+我只給她testdb17資料庫的權限，而且她還不可以授權給其他用戶（沒有WITH GRANT OPTION）
+然後我才發現
+只要不是超級使用者
+這些一般的用戶像是monti
+都沒辦法從phpmyadmin的網頁操作介面登入
+不只這樣，如果試著讓用戶monti從文字模式的mysql command line client登入
+會像這樣
+root@cubie:~# mysql -u monti -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 7
+Server version: 10.0.14-MariaDB-log
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> show databases;
+ERROR 2006 (HY000): MySQL server has gone away
+No connection. Trying to reconnect...
+Connection id:    8
+Current database: *** NONE ***
+
+ERROR 1184 (08S01): Aborted connection 8 to db: 'unconnected' user: 'monti' host: 'localhost' (init_connect command failed)
+MariaDB [(none)]> use testdb17;
+No connection. Trying to reconnect...
+Connection id:    9
+Current database: *** NONE ***
+
+ERROR 1184 (08S01): Aborted connection 9 to db: 'unconnected' user: 'monti' host: 'localhost' (init_connect command failed)
+MariaDB [(none)]>
+
+這樣很頭痛
+連文字模字下的command line client都沒辦法使用
+以「ERROR 1184 (08S01): Aborted connection」當作關鍵字搜尋
+找到了
+
+日本網友的參考資料
+http://blog.codebook-10000.com/entry/20130806/1375794910
+
+照著這個日本網友說的
+我看了一下
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 4
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW GLOBAL VARIABLES LIKE "init%";
++---------------+----------------------+
+| Variable_name | Value                |
++---------------+----------------------+
+| init_connect  | ‘SET NAMES utf8’     |
+| init_file     |                      |
+| init_slave    |                      |
++---------------+----------------------+
+3 rows in set (0.01 sec)
+
+MariaDB [(none)]>
+
+然後我想起了我的/etc/my.cnf裡面這一行
+init_connect=‘SET NAMES utf8’
+
+於是我把這一行改成
+init_connect=
+
+（不要只是把它注解掉，沒有用，要改成上面這樣）
+接著我重新啟動了mariadb服務器
+root@cubie:~# service mysql restart
+Shutting down MySQL
+[ .k 
+Starting MySQL
+[ o. 
+root@cubie:~# netstat -anp|grep mysql
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      4883/mysqld     
+unix  2      [ ACC ]     STREAM     LISTENING     12045403 4883/mysqld         /run/mysqld/mysqld.sock
+root@cubie:~# 
+
+再連進去mariadb服務器確認一下那個init_connect變數的值
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 4
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW GLOBAL VARIABLES LIKE "init%";
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| init_connect  |       |
+| init_file     |       |
+| init_slave    |       |
++---------------+-------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> 
+看起來正常了，不過我是為了utf8才去動這些設定的
+再確認一下utf8相關的編碼有沒有被亂動？
+
+MariaDB [(none)]> SHOW VARIABLES LIKE '%character%';
++--------------------------+--------------------------------------------------+
+| Variable_name            | Value                                            |
++--------------------------+--------------------------------------------------+
+| character_set_client     | utf8                                             |
+| character_set_connection | utf8                                             |
+| character_set_database   | utf8                                             |
+| character_set_filesystem | binary                                           |
+| character_set_results    | utf8                                             |
+| character_set_server     | utf8                                             |
+| character_set_system     | utf8                                             |
+| character_sets_dir       | /usr/local/mariadb-10.0.14/share/mysql/charsets/ |
++--------------------------+--------------------------------------------------+
+8 rows in set (0.00 sec)
+
+MariaDB [(none)]> SHOW VARIABLES LIKE '%collation%';
++----------------------+-----------------+
+| Variable_name        | Value           |
++----------------------+-----------------+
+| collation_connection | utf8_unicode_ci |
+| collation_database   | utf8_unicode_ci |
+| collation_server     | utf8_unicode_ci |
++----------------------+-----------------+
+3 rows in set (0.00 sec)
+
+MariaDB [(none)]> 
+
+看起來utf8相關的設定都沒被修改，呼
+現在exit，登出資料庫超級使用者tony的身分，再次用一般用戶monti登入看看
+MariaDB [(none)]> exit
+Bye
+root@cubie:~# mysql -u monti -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 5
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| testdb17           |
++--------------------+
+2 rows in set (0.01 sec)
+
+MariaDB [(none)]> use testdb17;
+Database changed
+MariaDB [testdb17]> show tables;
+Empty set (0.01 sec)
+
+MariaDB [testdb17]> 
+終於正常了，混帳東西
+回到phpmyadmin的網頁登入介面
+用一般用戶monti登入
+終於可以登入了
+
+因為/etc/my.cnf設定檔很長
+這裡只列出[mysqld]區塊裡
+現在和utf8相關的設定
+因為稍早前的錯誤設定
+導致一般權限的資料庫用戶無法登入mariadb
+因為之前一直是用超級使用者tony登入mariadb服務器
+所以沒有發現這個問題
+
+# --- utf8 settings begin ---
+init_connect=‘SET collation_connection = utf8_unicode_ci’
+init_connect=
+character-set-server=utf8
+collation-server=utf8_unicode_ci
+skip-character-set-client-handshake
+# --- utf8 settings end ---
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
