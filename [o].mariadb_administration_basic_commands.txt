@@ -73,6 +73,7 @@ o.MariaDB服務器管理基礎
 
 （遇到其他奇怪的問題：）
    55.無法使用一般的用戶登入mariadb服務器
+   56.一般用戶登入mariadb之後會一直看到一個information_schema資料庫，可以隱藏它嗎？
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 1.查看mysqld運行狀態
@@ -3164,5 +3165,33 @@ character-set-server=utf8
 collation-server=utf8_unicode_ci
 skip-character-set-client-handshake
 # --- utf8 settings end ---
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+56.一般用戶登入mariadb之後會一直看到一個information_schema資料庫，可以隱藏它嗎？
+
+參考資料
+http://n11studio.blogspot.tw/2013/12/phpmyadmininformationschema.html
+
+修改phpmyadmin的設定檔config.inc.php
+# cd /usr/local/nginx/phpmyadmin
+# vi ./config.inc.php 
+
+在
+/* End of servers configuration */
+的前面加上一行
+$cfg['Servers'][$i]['hide_db'] = 'information_schema';
+
+改完之後
+不用重啟nginx也不用重啟php-fpm
+立即生效
+這樣mariadb服務器的一般用戶monti
+登入phpmyadmin之後
+只會看到她自已有權限操作的testdb17資料庫
+其他資料庫她都看不到
+但是如果她使用文字模式的mysql command line client登入mariadb服務器
+還是會看到information_schema資料庫
+不過看到也沒差
+她也沒有權限去改它
+頂多就看看而已
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
