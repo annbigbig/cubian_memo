@@ -573,7 +573,14 @@ root@cubie:/usr/local/nginx/phpmyadmin# ls -al config.inc.php
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 6.使用文字編輯器設定config.inc.php
 
-（抱歉…有時間會補上…）
+大致上是複製
+/usr/local/nginx/phpmyadmin/config.sample.inc.php
+這個檔案
+然後改一改內容
+符合你的需要
+完全從頭開始太累了
+
+（抱歉…有時間會補上細節…）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
 7.一般用戶使用phpmyadmin網頁介面，登入mariadb之後會一直看到一個information_schema資料庫，可以隱藏它嗎？
@@ -887,8 +894,8 @@ $i = 0;
 $i++;
 $cfg['Servers'][$i]['verbose'] = 'my localhost server';
 $cfg['Servers'][$i]['host'] = 'localhost';
-$cfg['Servers'][$i]['port'] = '';
-$cfg['Servers'][$i]['socket'] = '';
+$cfg['Servers'][$i]['port'] = '3306';
+$cfg['Servers'][$i]['socket'] = '/run/mysqld/mysqld.sock';
 $cfg['Servers'][$i]['connect_type'] = 'tcp';
 $cfg['Servers'][$i]['auth_type'] = 'cookie';
 $cfg['Servers'][$i]['user'] = '';
