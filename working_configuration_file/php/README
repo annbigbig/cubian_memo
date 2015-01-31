@@ -1,0 +1,5 @@
+PHP安裝路徑 /usr/local/php-5.5.21
+symlink路徑 /usr/local/php
+php.ini設定檔路徑 /usr/local/php/lib/php.ini
+php-fpm.conf設定檔路徑 /usr/local/php/etc/php-fpm.conf
+init-script路徑 /etc/init.d/php-fpm

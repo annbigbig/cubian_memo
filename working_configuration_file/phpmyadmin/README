@@ -1,0 +1,4 @@
+phpMyAdmin版本 4.3.8
+安裝路徑 /usr/local/nginx/phpmyadmin-4.3.8
+symlink路徑 /usr/local/nginx/phpmyadmin
+設定檔完整路徑 /usr/local/nginx/phpmyadmin/config.inc.php

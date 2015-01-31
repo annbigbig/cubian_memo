@@ -1,2 +1,5 @@
 nginx版本 1.6.2
+安裝路徑 /usr/local/nginx-1.6.2
+symlink路徑 /usr/local/nginx
 設定檔完整路徑 /usr/local/nginx/conf/nginx.conf
+init-script路徑 /etc/init.d/nginx

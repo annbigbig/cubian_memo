@@ -1,2 +1,3 @@
 MariaDB版本 10.0.14
 設定檔完整路徑 /etc/my.cnf
+init-script路徑 /etc/init.d/mysql
