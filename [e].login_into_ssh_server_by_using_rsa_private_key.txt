@@ -186,4 +186,45 @@ PasswordAuthentication no
 結果服務器會把你一腳踢出來
 Permission denied (publickey).
 
-耶，這就是我要的，只能用私鑰去連ssh server哦，啾咪
+耶，這就是我要的，只能用私鑰去連ssh server
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+待增強功能：使用chroot將ssh登入的用戶的活動範圍限制在某個目錄裡
+
+參考資料
+http://allanfeid.com/content/creating-chroot-jail-ssh-access
+
+因為用戶使用ssh私鑰登入服務器之後
+可以痞子逛大街
+像這樣
+anntony@anntony-Lenovo-B590 ~ $ ssh cubian
+Welcome to Cubian (GNU/Linux 3.4.79-sun7i armv7l)
+
+ * Documentation:  http://cubian.org
+
+ System information as of Sat Jan 31 15:29:24 CST 2015
+
+ Memory usage: 20.0% of 1.8GB
+ Usage of /:	5% of 126G
+
+ Until Mon Dec  1 00:41:49 CST 2014
+
+ 1008 packages are installed.
+ 39 packages can be updated.
+ 13 updates are security updates.
+ kernel can be updated.
+
+Last login: Sat Jan 31 14:50:23 2015 from 192.168.0.12
+cubie@cubie:~$ whoami
+cubie
+cubie@cubie:~$ cd /
+cubie@cubie:/$ ls
+bin   data  etc   lib         media  not  proc  run   selinux  sys  usr  xscreensaver.patches
+boot  dev   home  lost+found  mnt    opt  root  sbin  srv      tmp  var
+cubie@cubie:/$
+
+無法忍受痞子逛大街的行為
+所以要限制他們的活動範圍
+chroot應該不難搞，稍後實驗
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊

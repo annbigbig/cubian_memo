@@ -7,7 +7,9 @@
 4.將nginx服務器的127.0.0.1:443與客戶端機器的127.0.0.1:443對接
 5.第一次連入phpmyadmin設定網頁介面，使用網頁介面來設定config.inc.php
 6.使用文字編輯器設定config.inc.php
-7.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
+7.一般用戶使用phpmyadmin網頁介面，登入mariadb之後會一直看到一個information_schema資料庫，可以隱藏它嗎？
+8.該死的「尚未設定 phpMyAdmin 設定儲存空間，部份延伸功能將無法使用 [了解原因]」
+9.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
 
 細節
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
@@ -574,7 +576,379 @@ root@cubie:/usr/local/nginx/phpmyadmin# ls -al config.inc.php
 （抱歉…有時間會補上…）
 
 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
-7.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
+7.一般用戶使用phpmyadmin網頁介面，登入mariadb之後會一直看到一個information_schema資料庫，可以隱藏它嗎？
+
+參考資料
+http://n11studio.blogspot.tw/2013/12/phpmyadmininformationschema.html
+
+修改phpmyadmin的設定檔config.inc.php
+# cd /usr/local/nginx/phpmyadmin
+# vi ./config.inc.php 
+
+在
+/* End of servers configuration */
+的前面加上一行
+$cfg['Servers'][$i]['hide_db'] = 'information_schema';
+
+改完之後
+不用重啟nginx也不用重啟php-fpm
+立即生效
+這樣mariadb服務器的一般用戶monti
+登入phpmyadmin之後
+只會看到她自已有權限操作的testdb17資料庫
+其他資料庫她都看不到
+但是如果她使用文字模式的mysql command line client登入mariadb服務器
+還是會看到information_schema資料庫
+不過看到也沒差
+她也沒有權限去改它
+頂多就看看而已
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+8.該死的「尚未設定 phpMyAdmin 設定儲存空間，部份延伸功能將無法使用 [了解原因]」
+
+按下網頁裡的[了解原因]之後
+網頁跳到
+
+設定 pmadb ... 錯誤 ?
+一般關聯功能 已關閉
+
+按下那個 ? 問號
+再跳到一個英文網頁
+
+https://localhost/doc/html/setup.html#linked-tables
+
+內容是
+phpMyAdmin configuration storage
+
+For a whole set of additional features (bookmarks, comments, SQL-history, 
+tracking mechanism, PDF-generation, column contents transformation, etc.) 
+you need to create a set of special tables. 
+Those tables can be located in your own database, 
+or in a central database for a multi-user installation 
+(this database would then be accessed by the controluser, so no other user should have rights to it).
+
+感覺上是要叫我生幾個table出來，讓phpmyadmin儲存用戶們的設定值
+要不然進階的功能就不讓我使用
+下一段是
+Zero configuration
+
+In many cases, this database structure can be automatically created and configured. 
+This is called “Zero Configuration” mode and can be particularly useful in shared hosting situations.
+ “Zeroconf” mode is on by default, to disable set $cfg['ZeroConf'] to false.
+
+The following three scenarios are convered by the Zero Configuration mode:
+
+● When entering a database where the configuration storage tables are not present, 
+phpMyAdmin offers to create them from the Operations tab.
+
+● When entering a database where the tables do already exist, 
+the software automatically detects this and begins using them. 
+This is the most common situation; 
+after the tables are initially created automatically they are continually used without disturbing the user;
+ this is also most useful on shared hosting where the user is not able to edit config.inc.php 
+and usually the user only has access to one database.
+
+● When having access to multiple databases, 
+if the user first enters the database containing the configuration storage tables then switches to another database, 
+phpMyAdmin continues to use the tables from the first database; 
+the user is not prompted to create more tables in the new database.
+
+再下面還有一段
+Manual configuration
+內容也是很長，所以我不放上了
+反正如果phpmyadmin一直跳出這個
+「尚未設定 phpMyAdmin 設定儲存空間，部份延伸功能將無法使用 [了解原因]」
+你可以按下連結自已看
+這個網頁絕對不會不見
+因為它其實是放在Cubian機器的硬碟的
+/usr/local/nginx/phpmyadmin/doc/html
+這個子目錄中
+
+我要先動手了
+反正就是少了一個名字也是叫作phpmyadmin的資料庫
+讓phpmyadmin可以儲存這些用戶的設定值 (bookmark、comments、SQL-History之類的)
+
+進入mariadb命令提示符
+先產生一個pma@localhost資料庫用戶，並設定他的密碼是pmapassword
+
+root@cubie:~# mysql --defaults-file=./mysql_client_settings.txt 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 107
+Server version: 10.0.14-MariaDB-log Source distribution
+
+Copyright (c) 2000, 2014, Oracle, SkySQL Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> use mysql;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [mysql]> select User,Host,Password from user;
++-----------+---------------------------+-------------------------------------------+
+| User      | Host                      | Password                                  |
++-----------+---------------------------+-------------------------------------------+
+| root      | localhost                 | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| root      | 127.0.0.1                 | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| root      | ::1                       | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| tony      | localhost                 | *5938568D06F7260E41353CAB3E9B305CAC18570C |
+| monti     | localhost                 | *48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C |
+| monti     | 127.0.0.1                 | *48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C |
+| narudo    | %.example.net             | *C9227A2D81C4C9794F3D69D6E68A1042B66DF07F |
+| nodelasky | 192.168.0.12              | *4D60DB4F79E0B82BA8A0F92F876EFCE34A66CE3A |
+| tony      | 127.0.0.1                 | *5938568D06F7260E41353CAB3E9B305CAC18570C |
+| laravel   | 192.168.0.0/255.255.255.0 | *C7B931A62D265417B627B6AA1DD3747A7EBE4639 |
+| felix     | localhost                 | *A0F7F2343BDE4E03A39B3D0AC0B0635AAADF2513 |
+| felix     | 127.0.0.1                 | *A0F7F2343BDE4E03A39B3D0AC0B0635AAADF2513 |
++-----------+---------------------------+-------------------------------------------+
+12 rows in set (0.00 sec)
+
+MariaDB [mysql]> CREATE USER 'pma'@'localhost' IDENTIFIED BY 'pmapassword';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> select User,Host,Password from user;
++-----------+---------------------------+-------------------------------------------+
+| User      | Host                      | Password                                  |
++-----------+---------------------------+-------------------------------------------+
+| root      | localhost                 | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| root      | 127.0.0.1                 | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| root      | ::1                       | *B638EC5422004FCF44EE84FABA603D29A2259BC0 |
+| tony      | localhost                 | *5938568D06F7260E41353CAB3E9B305CAC18570C |
+| monti     | localhost                 | *48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C |
+| monti     | 127.0.0.1                 | *48A4D8FE49C55F6EB270BEF629A90CBA97F1D76C |
+| narudo    | %.example.net             | *C9227A2D81C4C9794F3D69D6E68A1042B66DF07F |
+| nodelasky | 192.168.0.12              | *4D60DB4F79E0B82BA8A0F92F876EFCE34A66CE3A |
+| tony      | 127.0.0.1                 | *5938568D06F7260E41353CAB3E9B305CAC18570C |
+| laravel   | 192.168.0.0/255.255.255.0 | *C7B931A62D265417B627B6AA1DD3747A7EBE4639 |
+| felix     | localhost                 | *A0F7F2343BDE4E03A39B3D0AC0B0635AAADF2513 |
+| felix     | 127.0.0.1                 | *A0F7F2343BDE4E03A39B3D0AC0B0635AAADF2513 |
+| pma       | localhost                 | *164A0277009B770240353B9CB8B44AE2D67816B6 |
++-----------+---------------------------+-------------------------------------------+
+13 rows in set (0.00 sec)
+
+還是在MariaDB [mysql]提示符
+現在執行一次
+/usr/local/nginx/phpmyadmin/examples/create_tables.sql
+的內容
+產生一個名字是phpmyadmin的資料庫，還有裡面有幾個table，這要用來儲存phpmyadmin的某些用戶資訊
+
+MariaDB [mysql]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| testdb17           |
+| testdb3            |
++--------------------+
+5 rows in set (0.00 sec)
+
+MariaDB [mysql]> source /usr/local/nginx/phpmyadmin/examples/create_tables.sql;
+Query OK, 1 row affected (0.00 sec)
+
+Database changed
+Query OK, 0 rows affected (0.33 sec)
+
+Query OK, 0 rows affected (0.38 sec)
+
+Query OK, 0 rows affected (0.39 sec)
+
+Query OK, 0 rows affected (0.36 sec)
+
+Query OK, 0 rows affected (0.34 sec)
+
+Query OK, 0 rows affected (0.32 sec)
+
+Query OK, 0 rows affected (0.34 sec)
+
+Query OK, 0 rows affected (3.47 sec)
+
+Query OK, 0 rows affected (0.65 sec)
+
+Query OK, 0 rows affected (0.33 sec)
+
+Query OK, 0 rows affected (0.35 sec)
+
+Query OK, 0 rows affected (0.36 sec)
+
+Query OK, 0 rows affected (0.34 sec)
+
+Query OK, 0 rows affected (0.34 sec)
+
+Query OK, 0 rows affected (0.33 sec)
+
+Query OK, 0 rows affected (0.38 sec)
+
+Query OK, 0 rows affected (0.34 sec)
+
+MariaDB [phpmyadmin]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| testdb17           |
+| testdb3            |
++--------------------+
+6 rows in set (0.01 sec)
+
+MariaDB [phpmyadmin]> use phpmyadmin;
+Database changed
+MariaDB [phpmyadmin]> show tables;
++-----------------------+
+| Tables_in_phpmyadmin  |
++-----------------------+
+| pma__bookmark         |
+| pma__central_columns  |
+| pma__column_info      |
+| pma__favorite         |
+| pma__history          |
+| pma__navigationhiding |
+| pma__pdf_pages        |
+| pma__recent           |
+| pma__relation         |
+| pma__savedsearches    |
+| pma__table_coords     |
+| pma__table_info       |
+| pma__table_uiprefs    |
+| pma__tracking         |
+| pma__userconfig       |
+| pma__usergroups       |
+| pma__users            |
++-----------------------+
+17 rows in set (0.00 sec)
+
+MariaDB [phpmyadmin]> SHOW GRANTS FOR 'pma'@'localhost';
++------------------------------------------------------------------------------------------------------------+
+| Grants for pma@localhost                                                                                   |
++------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'pma'@'localhost' IDENTIFIED BY PASSWORD '*164A0277009B770240353B9CB8B44AE2D67816B6' |
++------------------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+MariaDB [phpmyadmin]> 
+
+我覺得上面的輸出有點詭異
+為什麼用戶pma@localhost沒有關於phpmyadmin資料庫的任何權限？
+於是我看了一下
+/usr/local/nginx/phpmyadmin/examples/create_tables.sql
+裡面這裡
+-- --------------------------------------------------------
+
+--
+-- Privileges
+--
+-- (activate this statement if necessary)
+-- GRANT SELECT, INSERT, DELETE, UPDATE, ALTER ON `phpmyadmin`.* TO
+--    'pma'@localhost;
+
+-- --------------------------------------------------------
+啊靠腰哩
+授權pma@localhost對於phpmyadmin資料庫的指令
+被注解掉了
+根本就沒執行
+好吧那我只好手動給它來一下
+MariaDB [mysql]> GRANT SELECT, INSERT, DELETE, UPDATE, ALTER ON phpmyadmin.* TO 'pma'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+MariaDB [mysql]> SHOW GRANTS FOR 'pma'@'localhost';
++------------------------------------------------------------------------------------------------------------+
+| Grants for pma@localhost                                                                                   |
++------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'pma'@'localhost' IDENTIFIED BY PASSWORD '*164A0277009B770240353B9CB8B44AE2D67816B6' |
+| GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON `phpmyadmin`.* TO 'pma'@'localhost'                         |
++------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.01 sec)
+
+MariaDB [mysql]>
+
+這樣就產生了phpmyadmin資料庫，而且讓資料庫用戶pma@localhost可以存取它
+現在要修改config.inc.php
+
+# vi /usr/local/nginx/phpmyadmin/config.inc.php
+
+config.inc.php檔案完整內容如下
+
+<?php
+/*
+ * Generated configuration file
+ * Generated by: phpMyAdmin 4.3.8 setup script
+ * Date: Fri, 30 Jan 2015 17:37:51 +0800
+ */
+
+/* Servers configuration */
+$i = 0;
+
+/* Server: my localhost server [1] */
+$i++;
+$cfg['Servers'][$i]['verbose'] = 'my localhost server';
+$cfg['Servers'][$i]['host'] = 'localhost';
+$cfg['Servers'][$i]['port'] = '';
+$cfg['Servers'][$i]['socket'] = '';
+$cfg['Servers'][$i]['connect_type'] = 'tcp';
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+$cfg['Servers'][$i]['user'] = '';
+$cfg['Servers'][$i]['password'] = '';
+$cfg['Servers'][$i]['AllowRoot'] = false;
+$cfg['Servers'][$i]['hide_db'] = 'information_schema';
+$cfg['Servers'][$i]['pmadb'] = 'phpmyadmin';
+$cfg['Servers'][$i]['bookmarktable'] = 'pma__bookmark';
+$cfg['Servers'][$i]['relation'] = 'pma__relation';
+$cfg['Servers'][$i]['table_info'] = 'pma__table_info';
+$cfg['Servers'][$i]['table_coords'] = 'pma__table_coords';
+$cfg['Servers'][$i]['pdf_pages'] = 'pma__pdf_pages';
+$cfg['Servers'][$i]['column_info'] = 'pma__column_info';
+$cfg['Servers'][$i]['history'] = 'pma__history';
+$cfg['Servers'][$i]['recent'] = 'pma__recent';
+$cfg['Servers'][$i]['table_uiprefs'] = 'pma__table_uiprefs';
+$cfg['Servers'][$i]['users'] = 'pma__users';
+$cfg['Servers'][$i]['usergroups'] = 'pma__usergroups';
+$cfg['Servers'][$i]['navigationhiding'] = 'pma__navigationhiding';
+$cfg['Servers'][$i]['central_columns'] = 'pma__central_columns';
+$cfg['Servers'][$i]['savedsearches'] = 'pma__savedsearches';
+$cfg['Servers'][$i]['tracking'] = 'pma__tracking';
+$cfg['Servers'][$i]['favorite'] = 'pma__favorite';
+$cfg['Servers'][$i]['userconfig'] = 'pma__userconfig';
+$cfg['Servers'][$i]['controluser'] = 'pma';
+$cfg['Servers'][$i]['controlpass'] = 'pmapassword';
+/* End of servers configuration */
+
+$cfg['UploadDir'] = '';
+$cfg['SaveDir'] = '';
+$cfg['ForceSSL'] = true;
+$cfg['blowfish_secret'] = '54cb5080b65509.45459449';
+$cfg['DefaultLang'] = 'en';
+$cfg['ServerDefault'] = 1;
+?>
+
+這樣就完成config.inc.php的設定了
+重新登入phpmyadmin之後
+不會再有那個奇怪的「尚未設定 phpMyAdmin 設定儲存空間，部份延伸功能將無法使用 [了解原因]」
+phpmyadmin用起來
+就是很正常
+很好很好
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+意外的發現
+
+（在config.inc.php我少設定了兩個參數
+$cfg['Servers'][$i]['favorite']
+$cfg['Servers'][$i]['userconfig']才意外看到phpmyadmin介面裡的這個網頁訊息）
+
+快速設定進階功能:
+
+Create the needed tables with the ./examples/create_tables.sql
+建立一個 pma 使用者並授權存取上一步操作中所建立的資料表的權限。
+在設定檔 (config.inc.php) 中啓用進階功能，請參考 config.sample.inc.php 中的範例。 
+請重新登入 phpMyAdmin 以載入新設定並使其生效
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+9.向godaddy購買SSL證書，一直到把我的nginx服務器安裝上SSL證書的過程大概是怎樣？
 
 godaddy官網的說明頁面
 https://support.godaddy.com/help/article/3601/generating-nginx-csrs-certificate-signing-requests
